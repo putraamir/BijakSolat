@@ -6,7 +6,7 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
-import GuestLayout from './Layouts/GuestLayout.vue';
+import AppLayout from './Layouts/AppLayout.vue';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -20,7 +20,7 @@ createInertiaApp({
 
         // Set default layout
         if (page.default.layout === undefined) {
-            page.default.layout = GuestLayout;
+            page.default.layout = AppLayout;
         }
 
         return page;
