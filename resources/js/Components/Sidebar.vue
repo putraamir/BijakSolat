@@ -176,7 +176,7 @@
     props: {
       isAuthenticated: {
         type: Boolean,
-        default: false
+        default: true
       },
       userName: {
         type: String,
@@ -199,6 +199,7 @@
         // Menu items for authenticated users
         menuItems: [
           { name: 'Dashboard', path: '/dashboard', icon: 'fas fa-home' },
+          {name: 'Kemaskini', path: '/kemaskini', icon: 'fas fa-edit'},
           { name: 'Tahun', path: '/tahun', icon: 'fas fa-book' },
           { name: 'Guru', path: '/guru', icon: 'fas fa-users' },
           { name: 'Pautan', path: '/pautan', icon: 'fas fa-calendar' },

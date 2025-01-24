@@ -10,6 +10,7 @@
         <slot></slot>
       </Sidebar>
       <Register />
+      <Login />
 
     </div>
   </template>
@@ -17,6 +18,7 @@
   <script>
   import Sidebar from '@/Components/Sidebar.vue';
   import Register from '@/Pages/Auth/Register.vue';
+  import Login from '@/Pages/Auth/Login.vue';
 
   export default {
     components: {
