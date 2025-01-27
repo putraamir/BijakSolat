@@ -115,19 +115,26 @@
           <p class="px-1 py-2 text-xs font-medium text-mint-600">TETAPAN</p>
           <nav class="space-y-1">
             <template v-if="isAuthenticated">
-              <Link
-                v-for="item in bottomMenuItems"
-                :key="item.name"
-                :href="item.path"
-                :class="`
-                  flex items-center gap-3 px-4 py-3 rounded-lg
-                  ${isCurrentRoute(item.path) ? 'bg-mint-200' : 'hover:bg-mint-100'}
-                  text-mint-700
-                `"
-              >
-                <i :class="[item.icon, 'h-5 w-5']"></i>
-                <span v-if="isExpanded">{{ item.name }}</span>
-              </Link>
+              <template v-for="item in bottomMenuItems" :key="item.name">
+                <Link
+                  v-if="item.path"
+                  :href="item.path"
+                  :class="`flex items-center gap-3 px-4 py-3 rounded-lg
+                    ${isCurrentRoute(item.path) ? 'bg-mint-200' : 'hover:bg-mint-100'}
+                    text-mint-700`"
+                >
+                  <i :class="[item.icon, 'h-5 w-5']"></i>
+                  <span v-if="isExpanded">{{ item.name }}</span>
+                </Link>
+                <button
+                  v-else
+                  @click="$data[item.action]()"
+                  class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-mint-100 text-mint-700"
+                >
+                  <i :class="[item.icon, 'h-5 w-5']"></i>
+                  <span v-if="isExpanded">{{ item.name }}</span>
+                </button>
+              </template>
             </template>
             <template v-else>
               <Link
@@ -164,7 +171,7 @@
   </template>
 
   <script>
-  import { Link } from '@inertiajs/vue3'
+  import { Link, router } from '@inertiajs/vue3'
 
   export default {
     name: 'Sidebar',
@@ -196,29 +203,25 @@
       return {
         isExpanded: true,
         isMobileOpen: false,
-        // Menu items for authenticated users
         menuItems: [
           { name: 'Dashboard', path: '/dashboard', icon: 'fas fa-home' },
           {name: 'Kemaskini', path: '/kemaskini', icon: 'fas fa-edit'},
-          { name: 'Tahun', path: '/tahun', icon: 'fas fa-book' },
+        //   { name: 'Tahun', path: '/tahun', icon: 'fas fa-book' },
           { name: 'Guru', path: '/guru', icon: 'fas fa-users' },
           { name: 'Pautan', path: '/pautan', icon: 'fas fa-calendar' },
-          { name: 'Jadual', path: '/jadual', icon: 'fas fa-calendar-alt' },
+        //   { name: 'Jadual', path: '/jadual', icon: 'fas fa-calendar-alt' },
           { name: 'Statistik', path: '/statistik', icon: 'fas fa-chart-bar' }
         ],
-        // Menu items for guests
         guestMenuItems: [
           { name: 'Home', path: '/', icon: 'fas fa-home' },
           { name: 'About', path: '/about', icon: 'fas fa-info-circle' },
           { name: 'Contact', path: '/contact', icon: 'fas fa-envelope' }
         ],
-        // Bottom menu for authenticated users
         bottomMenuItems: [
           { name: 'Tetapan', path: '/tetapan', icon: 'fas fa-cog' },
           { name: 'Bantuan', path: '/bantuan', icon: 'fas fa-question-circle' },
-          { name: 'Log Keluar', path: '/logout', icon: 'fas fa-sign-out-alt' }
+          { name: 'Log Keluar', action: 'logout', icon: 'fas fa-sign-out-alt' }
         ],
-        // Bottom menu for guests
         guestBottomMenuItems: [
           { name: 'Bantuan', path: '/bantuan', icon: 'fas fa-question-circle' },
           { name: 'Daftar', path: '/register', icon: 'fas fa-user-plus' }
@@ -237,6 +240,10 @@
 
       isCurrentRoute(path) {
         return window.location.pathname === path
+      },
+
+      async logout() {
+        router.post(route('logout'));
       }
     },
 

@@ -30,7 +30,7 @@ const navigateToAddStudent = () => {
                <Link href="/kemaskini" class="mr-4 p-2 rounded-lg bg-mint-100 hover:bg-mint-200">
                    <i class="fas fa-arrow-left"></i>
                </Link>
-               <h1 class="text-2xl font-semibold text-gray-800">KEMASKINI TASMIK TAHUN {{year}}</h1>
+               <h1 class="text-2xl font-semibold text-gray-800">KEMASKINI BACAAN TAHUN {{year}}</h1>
            </div>
 
            <div class="space-y-6">
