@@ -1,0 +1,19 @@
+First, clear any existing migrations:
+php artisan migrate:reset
+Then run them in sequence as shown above. This order ensures all required tables exist before they are referenced by foreign keys.
+
+php artisan migrate --path=/database/migrations/0001_01_01_000000_create_users_table.php
+
+php artisan migrate --path=/database/migrations/0001_01_01_000001_create_cache_table.php
+
+php artisan migrate --path=/database/migrations/0001_01_01_000002_create_jobs_table.php
+
+php artisan migrate --path=/database/migrations/2025_01_28_153457_create_students_table.php
+
+php artisan migrate --path=/database/migrations/2025_01_27_180727_create_categories_table.php
+
+php artisan migrate --path=/database/migrations/2025_01_28_151847_create_teacher_classes_table.php
+
+php artisan migrate --path=/database/migrations/2025_01_27_180729_create_evaluation_items_table.php
+
+php artisan migrate --path=/database/migrations/2025_01_27_180729_create_student_evaluations_table.php
