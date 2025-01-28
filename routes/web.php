@@ -4,6 +4,8 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\TeacherController;
+use App\Models\User;
 
 
 Route::get('/', function () {
@@ -86,8 +88,23 @@ Route::post('/submit-evaluation', function () {
     return redirect()->back();
 })->name('submit.evaluation');
 
+
+
 Route::get('/kemaskini/tahun/{year}/add-student', function ($year) {
     return Inertia::render('AddStudent', ['year' => $year]);
 })->name('add.student');
+
+Route::middleware(['auth'])->group(function () {
+    // Show all teachers
+    Route::get('/guru', function () {
+        return Inertia::render('Guru', [
+            'teachers' => User::with('teacherClasses')->get()
+        ]);
+    })->name('guru');
+
+    // Update teacher classes
+    Route::post('/guru/update-classes', [TeacherController::class, 'updateClasses'])
+        ->name('guru.updateClasses');
+});
 
 require __DIR__ . '/auth.php';
