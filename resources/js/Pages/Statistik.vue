@@ -57,8 +57,17 @@ const categoryStats = {
     'Amali Solat': { passed: 35, notPassed: 15 },
     'Bacaan': { passed: 30, notPassed: 20 },
     'Tahfiz': { passed: 25, notPassed: 25 }
+  },
+
+  2: {
+    'Amali Wuduk': { passed: 40, notPassed: 10 },
+    'Amali Solat': { passed: 35, notPassed: 15 },
+    'Bacaan': { passed: 30, notPassed: 20 },
+    'Tahfiz': { passed: 25, notPassed: 25 }
   }
+
 };
+
 
 const classStats = computed(() => {
   if (selectedClass.value === 'all') {
@@ -133,9 +142,9 @@ const barChartOptions = {
 
         <!-- Filters -->
         <div class="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div class="flex gap-4">
+          <div class="flex gap-2">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Tahun</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1 flex gap-2">Tahun</label>
               <select v-model="selectedYear" class="rounded-md border-gray-300 text-sm">
                 <option v-for="year in 6" :key="year" :value="year">
                   Tahun {{ year }}
