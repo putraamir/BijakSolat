@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\TeacherController;
 use App\Models\User;
+use App\Http\Controllers\StatistikController;
 
 
 Route::get('/', function () {
@@ -105,6 +106,10 @@ Route::middleware(['auth'])->group(function () {
     // Update teacher classes
     Route::post('/guru/update-classes', [TeacherController::class, 'updateClasses'])
         ->name('guru.updateClasses');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/statistik', [StatistikController::class, 'index'])->name('statistik');
 });
 
 require __DIR__ . '/auth.php';
