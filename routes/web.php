@@ -34,22 +34,7 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    $user = auth()->user();
-    $teacherClasses = $user->teacherClasses()->with('classRoom')
-        ->get()
-        ->map(function($teacherClass) {
-            $classRoom = $teacherClass->classRoom;
-            return [
-                'id' => $classRoom->id,
-                'name' => $classRoom->name,
-                'year_id' => $classRoom->year_id,
-                'students_count' => $classRoom->students()->count(),
-            ];
-        });
-
-    return Inertia::render('Dashboard', [
-        'teacherClasses' => $teacherClasses
-    ]);
+    return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -129,30 +114,12 @@ Route::get('/kemaskini/tahun/{year}/student/{studentId}/semak', function ($year,
     }
 })->name('student.semak');
 
-
-
 Route::post('/submit-evaluation', function () {
     // Handle evaluation submission
     // Store the scores in your database
     return redirect()->back();
 })->name('submit.evaluation');
 
-// Settings (Tetapan) route
-Route::get('/tetapan', function () {
-    return Inertia::render('Tetapan', [
-        'user' => Auth::user()
-    ]);
-})->middleware(['auth', 'verified'])->name('tetapan');// Settings route
-Route::get('/settings', function () {
-    return Inertia::render('Settings', [
-        'user' => Auth::user()
-    ]);
-})->middleware(['auth', 'verified'])->name('settings');// Existing settings route
-Route::get('/settings', function () {
-    return Inertia::render('Settings', [
-        'user' => Auth::user()
-    ]);
-})->middleware(['auth', 'verified'])->name('settings');
 
 
 Route::get('/kemaskini/tahun/{year}/add-student', function ($year) {
