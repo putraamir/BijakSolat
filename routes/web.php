@@ -29,7 +29,22 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
+    $user = auth()->user();
+    $teacherClasses = $user->teacherClasses()->with('classRoom')
+        ->get()
+        ->map(function($teacherClass) {
+            $classRoom = $teacherClass->classRoom;
+            return [
+                'id' => $classRoom->id,
+                'name' => $classRoom->name,
+                'year_id' => $classRoom->year_id,
+                'students_count' => $classRoom->students()->count(),
+            ];
+        });
+
+    return Inertia::render('Dashboard', [
+        'teacherClasses' => $teacherClasses
+    ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
