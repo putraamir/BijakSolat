@@ -19,6 +19,7 @@
         "vue": "^3.4.0"
     },
     "dependencies": {
+        "adhan": "^4.4.3",
         "chart.js": "^4.4.7",
         "vue-chartjs": "^5.3.2"
     }

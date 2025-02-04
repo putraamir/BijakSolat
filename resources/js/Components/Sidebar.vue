@@ -210,7 +210,8 @@
           { name: 'Guru', path: '/guru', icon: 'fas fa-users' },
           { name: 'Pautan', path: '/pautan', icon: 'fas fa-calendar' },
         //   { name: 'Jadual', path: '/jadual', icon: 'fas fa-calendar-alt' },
-          { name: 'Statistik', path: '/statistik', icon: 'fas fa-chart-bar' }
+          { name: 'Statistik', path: '/statistik', icon: 'fas fa-chart-bar' },
+          { name: 'Objek Penilaian', path: '/objek-penilaian', icon: 'fas fa-tasks' }
         ],
         guestMenuItems: [
           { name: 'Home', path: '/', icon: 'fas fa-home' },

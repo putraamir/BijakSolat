@@ -15,6 +15,7 @@ use App\Models\EvaluationItem;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\Year;
+use App\Http\Controllers\EvaluationItemController;
 use Illuminate\Support\Facades\DB;
 
 Route::get('/', function () {
@@ -143,6 +144,12 @@ Route::delete('/students/{student}', [StudentController::class, 'destroy'])->nam
 Route::post('/teachers', [TeacherController::class, 'store'])->name('teachers.store');
 Route::put('/teachers/{teacher}', [TeacherController::class, 'update'])->name('teachers.update');
 Route::delete('/teachers/{teacher}', [TeacherController::class, 'destroy'])->name('teachers.destroy');
+
+
+Route::middleware('auth')->group(function () {
+    Route::get('/objek-penilaian', [EvaluationItemController::class, 'index'])->name('evaluation.index');
+    Route::post('/objek-penilaian/import', [EvaluationItemController::class, 'import'])->name('evaluation.import');
+});
 
 
 Route::get('/stats/{year}/{class}', function ($year, $class) {

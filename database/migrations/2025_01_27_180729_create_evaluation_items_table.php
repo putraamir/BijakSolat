@@ -10,11 +10,11 @@ return new class extends Migration
     {
         Schema::create('evaluation_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->string('title');
-            $table->enum('type', ['RUKUN', 'SUNAT']);
-            $table->integer('year');
+            $table->enum('type', ['RUKUN', 'SUNAT', 'SOLAT JENAZAH', 'SOLAT BERJEMAAH']);
             $table->integer('sequence');
+            $table->string('category');
+            $table->integer('year');
             $table->timestamps();
         });
     }
