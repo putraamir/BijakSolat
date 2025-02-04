@@ -35,21 +35,18 @@ const totalStudents = computed(() => {
   return props.teacherClasses.reduce((total, cls) => total + cls.students_count, 0);
 });
 
-const chartData = computed(() => {
-  // Assuming you'll pass evaluation data for the teacher's classes
-  return {
-    labels: ['Amali Wuduk', 'Amali Solat', 'Bacaan', 'Tahfiz'],
-    datasets: [{
-      label: 'Lulus',
-      data: [85, 75, 65, 80],
-      backgroundColor: '#10B981'
-    }, {
-      label: 'Belum Lulus',
-      data: [15, 25, 35, 20],
-      backgroundColor: '#EF4444'
-    }]
-  };
-});
+const chartData = {
+  labels: ['Amali Wuduk', 'Amali Solat', 'Bacaan', 'Tahfiz'],
+  datasets: [{
+    label: 'Lulus',
+    data: [20, 18, 15, 22],
+    backgroundColor: '#10B981'
+  }, {
+    label: 'Belum Lulus',
+    data: [5, 7, 10, 3],
+    backgroundColor: '#EF4444'
+  }]
+};
 
 const chartOptions = {
   responsive: true,
@@ -57,7 +54,7 @@ const chartOptions = {
   scales: {
     y: {
       beginAtZero: true,
-      max: 100
+      max: 25
     }
   }
 };
@@ -125,7 +122,7 @@ const getGreeting = () => {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <div class="bg-white rounded-lg shadow-md p-6">
         <h3 class="text-lg font-semibold text-gray-800">Jumlah Pelajar</h3>
-        <p class="text-3xl font-bold text-mint-600">{{ totalStudents }}</p>
+        <p class="text-3xl font-bold text-mint-600">25</p>
       </div>
       <div class="bg-white rounded-lg shadow-md p-6">
         <h3 class="text-lg font-semibold text-gray-800">Kelas</h3>
@@ -133,11 +130,11 @@ const getGreeting = () => {
       </div>
       <div class="bg-white rounded-lg shadow-md p-6">
         <h3 class="text-lg font-semibold text-gray-800">Lulus</h3>
-        <p class="text-3xl font-bold text-green-600">85%</p>
+        <p class="text-3xl font-bold text-green-600">75%</p>
       </div>
       <div class="bg-white rounded-lg shadow-md p-6">
         <h3 class="text-lg font-semibold text-gray-800">Belum Lulus</h3>
-        <p class="text-3xl font-bold text-red-600">15%</p>
+        <p class="text-3xl font-bold text-red-600">25%</p>
       </div>
     </div>
 
