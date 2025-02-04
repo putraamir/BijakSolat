@@ -1,100 +1,71 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { Link, useForm, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
-const props = defineProps({
-  teachers: Array,
-  availableClasses: Array,
-  unassignedClasses: Array
-});
-
 const showEditModal = ref(false);
-const showAddModal = ref(false);
 const selectedTeacher = ref(null);
 const selectedClasses = ref([]);
 
-const form = useForm({
-  name: '',
-  email: '',
-  classes: []
-});
-
-const editForm = useForm({
-  classes: []
-});
-
-const submitTeacher = () => {
-  form.post(route('teachers.store'), {
-    onSuccess: () => {
-      showAddModal.value = false;
-      form.reset();
-    }
-  });
-};
+// Local state for teachers
+const teachers = ref([
+  {
+    id: 1,
+    name: 'Ustaz Ahmad',
+    email: 'ahmad@example.com',
+    teacher_classes: [
+      { year: 1, class_name: 'Cemerlang' },
+      { year: 2, class_name: 'Gemilang' }
+    ]
+  },
+  {
+    id: 2,
+    name: 'Ustazah Sarah',
+    email: 'sarah@example.com',
+    teacher_classes: [
+      { year: 3, class_name: 'Cemerlang' }
+    ]
+  },
+  {
+    id: 3,
+    name: 'Ustaz Mahmud',
+    email: 'mahmud@example.com',
+    teacher_classes: [
+      { year: 4, class_name: 'Cemerlang' },
+      { year: 5, class_name: 'Gemilang' }
+    ]
+  }
+]);
 
 const openEditModal = (teacher) => {
-  console.log('Opening edit modal for teacher:', teacher);
   selectedTeacher.value = teacher;
-
-  editForm.reset();
-  editForm.classes = teacher.classes.map(c => c.id);
-
+  selectedClasses.value = [...teacher.teacher_classes];
   showEditModal.value = true;
-
-  router.reload({
-    data: {
-      editing_teacher_id: teacher.id
-    },
-    preserveState: true,
-    preserveScroll: true
-  });
 };
 
-const submitEdit = () => {
-  editForm.put(route('teachers.update', selectedTeacher.value.id), {
-    onSuccess: () => {
-      showEditModal.value = false;
-      selectedTeacher.value = null;
-      editForm.reset();
-      window.location.reload();
-    },
-    onError: (errors) => {
-      console.error('Update failed:', errors);
-      alert('Failed to update teacher');
-    }
-  });
+const addClass = () => {
+  selectedClasses.value.push({ year: '', class_name: '' });
 };
 
-const deleteTeacher = (teacher) => {
-  if (confirm('Are you sure you want to delete this teacher?')) {
-    router.delete(route('teachers.destroy', teacher.id), {
-      preserveScroll: true,
-      onSuccess: () => {
-        console.log('Teacher deleted successfully');
-        window.location.reload();
-      },
-      onError: (errors) => {
-        console.error('Delete failed:', errors);
-        alert('Failed to delete teacher');
-      }
-    });
+const removeClass = (index) => {
+  selectedClasses.value.splice(index, 1);
+};
+
+const closeModal = () => {
+  showEditModal.value = false;
+  selectedTeacher.value = null;
+  selectedClasses.value = [];
+};
+
+const saveChanges = () => {
+  // Update the local state instead of sending to backend
+  const teacherIndex = teachers.value.findIndex(t => t.id === selectedTeacher.value.id);
+  if (teacherIndex !== -1) {
+    teachers.value[teacherIndex].teacher_classes = [...selectedClasses.value];
   }
+  closeModal();
 };
 
-const editableClasses = computed(() => {
-  if (!selectedTeacher.value) return [];
-
-  // Get teacher's current classes
-  const teacherClasses = selectedTeacher.value.classes || [];
-
-  // Combine with available unassigned classes
-  const combined = [...teacherClasses, ...props.availableClasses];
-
-  // Remove duplicates by class ID
-  return [...new Map(combined.map(item => [item.id, item])).values()]
-    .sort((a, b) => a.name.localeCompare(b.name));
-});
 </script>
 
 <template>
@@ -109,128 +80,95 @@ const editableClasses = computed(() => {
 
         <!-- Teachers Grid -->
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div v-for="teacher in teachers" :key="teacher.id"
-            class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+          <div v-for="teacher in teachers"
+               :key="teacher.id"
+               class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
             <div class="flex justify-between items-start">
               <div>
                 <h3 class="font-semibold text-lg">{{ teacher.name }}</h3>
                 <p class="text-gray-600 text-sm">{{ teacher.email }}</p>
               </div>
-              <div class="flex space-x-2">
-                <button @click="openEditModal(teacher)" class="text-mint-600 hover:bg-mint-50 p-2 rounded-full">
-                  <i class="fas fa-edit"></i>
-                </button>
-                <button @click="deleteTeacher(teacher)" class="text-red-600 hover:bg-red-50 p-2 rounded-full">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
+              <button @click="openEditModal(teacher)"
+                      class="text-mint-600 hover:bg-mint-50 p-2 rounded-full">
+                <i class="fas fa-edit"></i>
+              </button>
             </div>
 
             <!-- Classes Taught -->
             <div class="mt-4">
               <p class="text-sm text-gray-500 mb-2">Kelas Yang Diajar:</p>
               <div class="flex flex-wrap gap-2">
-                <span v-for="class_ in teacher.classes" :key="class_.id"
-                  class="px-3 py-1 bg-mint-100 text-mint-700 text-sm rounded-full">
-                  {{ class_.name }}
+                <span v-for="(class_, index) in teacher.teacher_classes"
+                      :key="index"
+                      class="px-3 py-1 bg-mint-100 text-mint-700 text-sm rounded-full">
+                  Tahun {{ class_.year }} {{ class_.class_name }}
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Floating Action Button -->
-        <button @click="showAddModal = true"
-          class="fixed bottom-6 right-6 w-14 h-14 bg-mint-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-mint-700 hover:scale-105 transition-all">
-          <i class="fas fa-plus text-xl"></i>
-        </button>
-
-        <!-- Add Teacher Modal -->
-        <div v-if="showAddModal"
-          class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center px-4 z-50">
-          <div class="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 class="text-xl font-semibold mb-4">Add New Teacher</h2>
-
-            <form @submit.prevent="submitTeacher" class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Name</label>
-                <input v-model="form.name" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Email</label>
-                <input v-model="form.email" type="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Classes</label>
-                <div class="mt-2 space-y-2">
-                  <label v-for="class_ in unassignedClasses" :key="class_.id" class="flex items-center">
-                    <input type="checkbox" v-model="form.classes" :value="class_.id"
-                      class="rounded border-gray-300 text-mint-600">
-                    <span class="ml-2">{{ class_.name }}</span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="flex space-x-3">
-                <button type="submit" class="flex-1 p-2 bg-mint-600 text-white rounded-lg hover:bg-mint-700"
-                  :disabled="form.processing">
-                  Save
-                </button>
-                <button type="button" @click="showAddModal = false"
-                  class="flex-1 p-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <!-- Add Edit Modal -->
+        <!-- Edit Modal -->
         <div v-if="showEditModal"
-          class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center px-4 z-50">
-          <div class="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 class="text-xl font-semibold mb-4">Edit Teacher</h2>
+             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div class="bg-white rounded-lg w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-xl font-semibold">Edit Kelas</h2>
+              <button @click="closeModal" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
 
-            <form @submit.prevent="submitEdit" class="space-y-4">
-              <!-- Read-only info -->
-              <div class="bg-gray-50 p-4 rounded-lg">
-                <div class="mb-2">
-                  <span class="text-sm text-gray-500">Name:</span>
-                  <p class="text-gray-900 font-medium">{{ selectedTeacher.name }}</p>
-                </div>
-                <div>
-                  <span class="text-sm text-gray-500">Email:</span>
-                  <p class="text-gray-900">{{ selectedTeacher.email }}</p>
-                </div>
+            <div class="space-y-4 mb-6">
+              <!-- Teacher Info -->
+              <div class="p-4 bg-gray-50 rounded-lg">
+                <h3 class="font-medium">{{ selectedTeacher?.name }}</h3>
+                <p class="text-sm text-gray-600">{{ selectedTeacher?.email }}</p>
               </div>
 
-              <!-- Classes selection -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Classes</label>
-                <div class="mt-2 space-y-2">
-                  <label v-for="class_ in editableClasses" :key="class_.id" class="flex items-center">
-                    <input type="checkbox" v-model="editForm.classes" :value="class_.id"
-                      class="rounded border-gray-300 text-mint-600">
-                    <span class="ml-2">{{ class_.name }}</span>
-                  </label>
-                </div>
-              </div>
+              <!-- Class Assignments -->
+              <div v-for="(classItem, index) in selectedClasses"
+                   :key="index"
+                   class="flex items-center gap-2">
+                <select v-model="classItem.year"
+                        class="rounded-md border-gray-300 text-sm">
+                  <option value="">Pilih Tahun</option>
+                  <option v-for="year in 6" :key="year" :value="year">
+                    Tahun {{ year }}
+                  </option>
+                </select>
 
-              <!-- Action buttons -->
-              <div class="flex space-x-3">
-                <button type="submit" class="flex-1 p-2 bg-mint-600 text-white rounded-lg hover:bg-mint-700">
-                  Update Classes
+                <select v-model="classItem.class_name"
+                        class="rounded-md border-gray-300 text-sm">
+                  <option value="">Pilih Kelas</option>
+                  <option value="Cemerlang">Cemerlang</option>
+                  <option value="Gemilang">Gemilang</option>
+                </select>
+
+                <button @click="removeClass(index)"
+                        class="p-2 text-red-500 hover:bg-red-50 rounded-full">
+                  <i class="fas fa-trash-alt"></i>
                 </button>
-                <button type="button" @click="showEditModal = false"
-                  class="flex-1 p-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                  Cancel
-                </button>
               </div>
-            </form>
+
+              <!-- Add Class Button -->
+              <button @click="addClass"
+                      class="w-full py-2 border-2 border-dashed border-mint-300 text-mint-600 rounded-lg hover:bg-mint-50 transition-colors">
+                <i class="fas fa-plus mr-2"></i> Tambah Kelas
+              </button>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex justify-end gap-2">
+              <button @click="closeModal"
+                      class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                Batal
+              </button>
+              <button @click="saveChanges"
+          class="px-4 py-2 bg-mint-600 text-white rounded-lg hover:bg-mint-700">
+    Simpan
+  </button>
+            </div>
           </div>
         </div>
       </div>
