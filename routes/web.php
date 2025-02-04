@@ -112,12 +112,30 @@ Route::get('/kemaskini/tahun/{year}/student/{studentId}/semak', function ($year,
     ]);
 })->name('student.semak');
 
+
+
 Route::post('/submit-evaluation', function () {
     // Handle evaluation submission
     // Store the scores in your database
     return redirect()->back();
 })->name('submit.evaluation');
 
+// Settings (Tetapan) route
+Route::get('/tetapan', function () {
+    return Inertia::render('Tetapan', [
+        'user' => Auth::user()
+    ]);
+})->middleware(['auth', 'verified'])->name('tetapan');// Settings route
+Route::get('/settings', function () {
+    return Inertia::render('Settings', [
+        'user' => Auth::user()
+    ]);
+})->middleware(['auth', 'verified'])->name('settings');// Existing settings route
+Route::get('/settings', function () {
+    return Inertia::render('Settings', [
+        'user' => Auth::user()
+    ]);
+})->middleware(['auth', 'verified'])->name('settings');
 
 
 Route::get('/kemaskini/tahun/{year}/add-student', function ($year) {
