@@ -5,93 +5,38 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
   teachers: Array,
-  availableClasses: Array,
-  unassignedClasses: Array
+  availableClasses: Array
 });
 
 const showEditModal = ref(false);
-const showAddModal = ref(false);
 const selectedTeacher = ref(null);
-const selectedClasses = ref([]);
-
-const form = useForm({
-  name: '',
-  email: '',
-  classes: []
-});
 
 const editForm = useForm({
   classes: []
 });
 
-const submitTeacher = () => {
-  form.post(route('teachers.store'), {
-    onSuccess: () => {
-      showAddModal.value = false;
-      form.reset();
-    }
-  });
-};
-
 const openEditModal = (teacher) => {
-  console.log('Opening edit modal for teacher:', teacher);
   selectedTeacher.value = teacher;
-
   editForm.reset();
   editForm.classes = teacher.classes.map(c => c.id);
-
   showEditModal.value = true;
-
-  router.reload({
-    data: {
-      editing_teacher_id: teacher.id
-    },
-    preserveState: true,
-    preserveScroll: true
-  });
 };
 
 const submitEdit = () => {
-  editForm.put(route('teachers.update', selectedTeacher.value.id), {
+  editForm.put(route('users.update.classes', selectedTeacher.value.id), {
     onSuccess: () => {
       showEditModal.value = false;
       selectedTeacher.value = null;
       editForm.reset();
       window.location.reload();
-    },
-    onError: (errors) => {
-      console.error('Update failed:', errors);
-      alert('Failed to update teacher');
     }
   });
 };
 
-const deleteTeacher = (teacher) => {
-  if (confirm('Are you sure you want to delete this teacher?')) {
-    router.delete(route('teachers.destroy', teacher.id), {
-      preserveScroll: true,
-      onSuccess: () => {
-        console.log('Teacher deleted successfully');
-        window.location.reload();
-      },
-      onError: (errors) => {
-        console.error('Delete failed:', errors);
-        alert('Failed to delete teacher');
-      }
-    });
-  }
-};
-
 const editableClasses = computed(() => {
   if (!selectedTeacher.value) return [];
-
-  // Get teacher's current classes
   const teacherClasses = selectedTeacher.value.classes || [];
-
-  // Combine with available unassigned classes
   const combined = [...teacherClasses, ...props.availableClasses];
-
-  // Remove duplicates by class ID
   return [...new Map(combined.map(item => [item.id, item])).values()]
     .sort((a, b) => a.name.localeCompare(b.name));
 });
@@ -103,8 +48,8 @@ const editableClasses = computed(() => {
       <div class="max-w-7xl mx-auto">
         <!-- Header -->
         <div class="mb-8">
-          <h1 class="text-2xl font-bold text-gray-800">Senarai Guru</h1>
-          <p class="text-gray-600">Urus senarai guru dan kelas yang diajar</p>
+          <h1 class="text-2xl font-bold text-gray-800">Senarai Pengguna</h1>
+          <p class="text-gray-600">Urus senarai pengguna dan kelas yang diajar</p>
         </div>
 
         <!-- Teachers Grid -->
@@ -119,9 +64,6 @@ const editableClasses = computed(() => {
               <div class="flex space-x-2">
                 <button @click="openEditModal(teacher)" class="text-mint-600 hover:bg-mint-50 p-2 rounded-full">
                   <i class="fas fa-edit"></i>
-                </button>
-                <button @click="deleteTeacher(teacher)" class="text-red-600 hover:bg-red-50 p-2 rounded-full">
-                  <i class="fas fa-trash"></i>
                 </button>
               </div>
             </div>
@@ -139,61 +81,11 @@ const editableClasses = computed(() => {
           </div>
         </div>
 
-        <!-- Floating Action Button -->
-        <button @click="showAddModal = true"
-          class="fixed bottom-6 right-6 w-14 h-14 bg-mint-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-mint-700 hover:scale-105 transition-all">
-          <i class="fas fa-plus text-xl"></i>
-        </button>
-
-        <!-- Add Teacher Modal -->
-        <div v-if="showAddModal"
-          class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center px-4 z-50">
-          <div class="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 class="text-xl font-semibold mb-4">Add New Teacher</h2>
-
-            <form @submit.prevent="submitTeacher" class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Name</label>
-                <input v-model="form.name" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Email</label>
-                <input v-model="form.email" type="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Classes</label>
-                <div class="mt-2 space-y-2">
-                  <label v-for="class_ in unassignedClasses" :key="class_.id" class="flex items-center">
-                    <input type="checkbox" v-model="form.classes" :value="class_.id"
-                      class="rounded border-gray-300 text-mint-600">
-                    <span class="ml-2">{{ class_.name }}</span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="flex space-x-3">
-                <button type="submit" class="flex-1 p-2 bg-mint-600 text-white rounded-lg hover:bg-mint-700"
-                  :disabled="form.processing">
-                  Save
-                </button>
-                <button type="button" @click="showAddModal = false"
-                  class="flex-1 p-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-
         <!-- Add Edit Modal -->
         <div v-if="showEditModal"
           class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center px-4 z-50">
           <div class="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 class="text-xl font-semibold mb-4">Edit Teacher</h2>
+            <h2 class="text-xl font-semibold mb-4">Edit Classes</h2>
 
             <form @submit.prevent="submitEdit" class="space-y-4">
               <!-- Read-only info -->

@@ -106,4 +106,14 @@ class StudentController extends Controller
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }
+
+    public function clearClass($classId)
+    {
+        try {
+            Student::where('class_id', $classId)->delete();
+            return redirect()->back()->with('success', 'All students cleared successfully');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'Failed to clear students']);
+        }
+    }
 }

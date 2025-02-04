@@ -16,8 +16,13 @@ use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\Year;
 use App\Http\Controllers\EvaluationItemController;
+use App\Http\Controllers\StudentEvaluationController;
+use App\Models\Category;
+use App\Models\StudentEvaluation;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -84,17 +89,29 @@ Route::get('/kemaskini/tahun/{year}/class/{classId}', function ($year, $classId)
 })->name('class.students');
 
 Route::get('/kemaskini/tahun/{year}/student/{studentId}/semak', function ($year, $studentId) {
-    // Fetch student data from your database
-    $student = [
-        'id' => $studentId,
-        'name' => 'Student Name',
-        // Add other student details
-    ];
+    try {
+        $student = Student::with('class.year')->findOrFail($studentId);
 
-    return Inertia::render('SemakPage', [
-        'student' => $student,
-        'year' => (int)$year
-    ]);
+        $categories = Category::with(['evaluationItems' => function ($query) {
+            $query->orderBy('sequence');
+        }])->where('year_id', $year)->get();
+
+        $existingEvaluations = StudentEvaluation::where('student_id', $studentId)
+            ->get()
+            ->keyBy('evaluation_item_id')
+            ->map(function ($evaluation) {
+                return $evaluation->status;
+            });
+
+        return Inertia::render('SemakPage', [
+            'student' => $student,
+            'categories' => $categories,
+            'existingEvaluations' => $existingEvaluations
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error loading semak page: ' . $e->getMessage());
+        return redirect()->back()->withErrors(['error' => 'Failed to load data']);
+    }
 })->name('student.semak');
 
 Route::post('/submit-evaluation', function () {
@@ -112,14 +129,15 @@ Route::get('/kemaskini/tahun/{year}/add-student', function ($year) {
 Route::middleware(['auth'])->group(function () {
     Route::get('/guru', function () {
         return Inertia::render('Guru', [
-            'teachers' => Teacher::with('classes')->get(),
+            'teachers' => User::with('classes')->get(),
             'availableClasses' => ClassRoom::where(function ($query) {
-                $query->whereDoesntHave('teachers')
-                    ->orWhereHas('teachers', function ($q) {
-                        $q->where('teachers.id', request()->input('editing_teacher_id'));
+                $query->whereDoesntHave('users', function ($q) {
+                    $q->where('users.id', '!=', request()->input('editing_teacher_id'));
+                })
+                    ->orWhereHas('users', function ($q) {
+                        $q->where('users.id', request()->input('editing_teacher_id'));
                     });
-            })->get(),
-            'unassignedClasses' => ClassRoom::whereDoesntHave('teachers')->get()
+            })->get()
         ]);
     })->name('guru');
 });
@@ -153,23 +171,21 @@ Route::post('logout', function () {
 
 
 Route::middleware('auth')->group(function () {
-    Route::get('/objek-penilaian', [EvaluationItemController::class, 'index'])->name('evaluation.index');
+    Route::get('/objek-penilaian', function (Request $request) {
+        return Inertia::render('EvaluationObject', [
+            'years' => Year::orderBy('id')->get(),
+            'evaluationData' => Category::with('evaluationItems')
+                ->where('year_id', $request->input('year', 1))
+                ->get(),
+            'existingCategories' => Category::where('year_id', $request->input('year', 1))
+                ->select('id', 'name')
+                ->get()
+        ]);
+    })->name('evaluation.index');
     Route::post('/objek-penilaian/import', [EvaluationItemController::class, 'import'])->name('evaluation.import');
-    Route::post('/objek-penilaian', [EvaluationItemController::class, 'store'])->name('evaluation.store');
+    Route::post('/evaluation/store', [StudentEvaluationController::class, 'store'])->name('evaluation.store');
     Route::delete('/objek-penilaian/{id}', [EvaluationItemController::class, 'destroy'])->name('evaluation.destroy');
 });
-
-Route::get('/kemaskini/tahun/{year}/student/{studentId}/semak', function ($year, $studentId) {
-    // Fetch student data with relationships
-    $student = Student::with(['class', 'class.year'])
-        ->findOrFail($studentId);
-
-    return Inertia::render('SemakPage', [
-        'student' => $student,
-        'year' => (int)$year
-    ]);
-})->name('student.semak');
-
 
 Route::get('/stats/{year}/{class}', function ($year, $class) {
     // Base query for students in the selected year
@@ -227,5 +243,16 @@ Route::get('/stats/{year}/{class}', function ($year, $class) {
         'data' => $responseData
     ]);
 })->name('stats.fetch');
+
+Route::post('/evaluation', [EvaluationItemController::class, 'store'])->name('evaluation.store');
+Route::delete('/evaluation-items/{item}', [EvaluationItemController::class, 'destroy'])->name('evaluation.destroy');
+Route::delete('/class/{classId}/clear', [StudentController::class, 'clearClass'])->name('class.clear');
+
+Route::put('/users/{user}/classes', function (User $user, Request $request) {
+    $user->classes()->sync($request->classes);
+    return redirect()->back();
+})->name('users.update.classes');
+
+Route::post('/evaluation/import', [EvaluationItemController::class, 'importCsv'])->name('evaluation.import');
 
 require __DIR__ . '/auth.php';

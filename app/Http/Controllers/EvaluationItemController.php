@@ -2,84 +2,139 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\EvaluationItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class EvaluationItemController extends Controller
 {
-    public function index(Request $request)
-    {
-        $items = EvaluationItem::orderBy('category')
-            ->orderBy('sequence')
-            ->get()
-            ->groupBy('category');
-
-        // For debugging
-        \Log::info('Items being passed to view:', ['items' => $items]);
-
-        return Inertia::render('EvaluationObject', [
-            'items' => $items
-        ]);
-    }
-
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string',
-            'type' => 'required|in:RUKUN,SUNAT',
-            'sequence' => 'required|integer',
-            'category' => 'required|string',
-            'year' => 'required|integer'
-        ]);
-
-        EvaluationItem::create($validated);
-
-        return redirect()->back();
-    }
-
-    public function import(Request $request)
-    {
         try {
-            $request->validate([
-                'file' => 'required|file|mimes:csv,txt'
+            $validated = $request->validate([
+                'category' => 'required|string',
+                'categoryId' => 'nullable|exists:categories,id',
+                'year_id' => 'required|exists:years,id',
+                'items' => 'required|array',
+                'items.*.title' => 'required|string',
+                'items.*.type' => 'required|in:RUKUN,SUNAT,WAJIB',
+                'items.*.sequence' => 'required|integer'
             ]);
 
-            $file = $request->file('file');
-            $handle = fopen($file->getPathname(), 'r');
+            DB::beginTransaction();
 
-            // Skip header row
-            $headers = fgetcsv($handle);
-
-            \DB::beginTransaction();
-
-            while (($data = fgetcsv($handle)) !== false) {
-                EvaluationItem::create([
-                    'title' => $data[0],
-                    'type' => strtoupper($data[1]),
-                    'sequence' => $data[2],
-                    'category' => $data[3],
-                    'year' => $data[4],
+            if (!empty($validated['categoryId'])) {
+                $category = Category::findOrFail($validated['categoryId']);
+            } else {
+                $category = Category::create([
+                    'name' => $validated['category'],
+                    'year_id' => $validated['year_id']
                 ]);
             }
 
-            fclose($handle);
-            \DB::commit();
+            $sequence = $category->evaluationItems()->count() + 1;
+            foreach ($validated['items'] as $item) {
+                $category->evaluationItems()->create([
+                    'title' => $item['title'],
+                    'type' => $item['type'],
+                    'sequence' => $sequence++
+                ]);
+            }
 
-            return back()->with('success', 'Import successful');
+            DB::commit();
+            return redirect()->back();
         } catch (\Exception $e) {
-            \DB::rollBack();
-            return back()->withErrors(['error' => 'Import failed: ' . $e->getMessage()]);
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => 'Failed to add evaluation items']);
         }
     }
 
-    public function destroy($id)
+    public function importCsv(Request $request)
     {
         try {
-            EvaluationItem::destroy($id);
-            return back()->with('success', 'Item deleted successfully');
+            $request->validate([
+                'file' => 'required|mimes:csv,txt',
+                'year' => 'required|exists:years,id'
+            ]);
+
+            DB::beginTransaction();
+
+            $file = $request->file('file');
+            $content = file_get_contents($file->getPathname());
+            $rows = explode("\n", trim($content));
+
+            // Clean and parse header
+            $headers = str_getcsv(array_shift($rows));
+            $headers = array_map(function ($header) {
+                return trim($header, " \t\n\r\0\x0B\"");
+            }, $headers);
+
+            // Process rows
+            $categorizedItems = [];
+            foreach ($rows as $row) {
+                if (empty(trim($row))) continue;
+
+                $values = str_getcsv($row);
+
+                // Validate row has same number of columns as header
+                if (count($values) !== count($headers)) {
+                    Log::warning('Skipping invalid row: ' . $row);
+                    continue;
+                }
+
+                $data = array_combine($headers, $values);
+                $categoryName = trim($data['category'], '"');
+
+                if (!isset($categorizedItems[$categoryName])) {
+                    $categorizedItems[$categoryName] = [];
+                }
+
+                $categorizedItems[$categoryName][] = [
+                    'title' => trim($data['title'], '"'),
+                    'type' => trim($data['type'], '"'),
+                    'sequence' => (int)trim($data['sequence'], '"')
+                ];
+            }
+
+            // Create categories and items
+            foreach ($categorizedItems as $categoryName => $items) {
+                $category = Category::firstOrCreate([
+                    'name' => $categoryName,
+                    'year_id' => $request->year
+                ]);
+
+                foreach ($items as $item) {
+                    $category->evaluationItems()->create($item);
+                }
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', 'CSV imported successfully');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Delete failed']);
+            DB::rollBack();
+            Log::error('CSV Import Error: ' . $e->getMessage());
+            return redirect()->back()->withErrors(['error' => 'Failed to import CSV: ' . $e->getMessage()]);
+        }
+    }
+
+    public function destroy(EvaluationItem $item)
+    {
+        try {
+            $categoryId = $item->category_id;
+            $item->delete();
+
+            // Check if category is empty
+            $remainingItems = EvaluationItem::where('category_id', $categoryId)->count();
+            if ($remainingItems === 0) {
+                Category::find($categoryId)->delete();
+            }
+
+            return redirect()->back()->with('success', 'Item deleted successfully');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'Failed to delete item']);
         }
     }
 }

@@ -11,10 +11,8 @@ return new class extends Migration
         Schema::create('student_evaluations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_id')->constrained()->onDelete('cascade');
-            $table->foreignId('evaluation_item_id')->constrained('evaluation_items')->onDelete('cascade');
-            $table->enum('score', ['Passed', 'Not'])->nullable();
-            $table->foreignId('evaluated_by')->constrained('users')->onDelete('cascade');
-            $table->timestamp('evaluated_at')->nullable();
+            $table->foreignId('evaluation_item_id')->constrained()->onDelete('cascade');
+            $table->enum('status', ['passed', 'not_passed']);
             $table->timestamps();
         });
     }

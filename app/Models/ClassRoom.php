@@ -8,9 +8,9 @@ class ClassRoom extends Model
 {
     protected $fillable = ['name', 'year_id'];
 
-    public function teachers()
+    public function users()
     {
-        return $this->belongsToMany(Teacher::class, 'teacher_class');
+        return $this->belongsToMany(User::class, 'teacher_class', 'class_id', 'teacher_id');
     }
 
     public function scopeUnassigned($query)
