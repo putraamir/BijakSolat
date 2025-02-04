@@ -149,7 +149,20 @@ Route::delete('/teachers/{teacher}', [TeacherController::class, 'destroy'])->nam
 Route::middleware('auth')->group(function () {
     Route::get('/objek-penilaian', [EvaluationItemController::class, 'index'])->name('evaluation.index');
     Route::post('/objek-penilaian/import', [EvaluationItemController::class, 'import'])->name('evaluation.import');
+    Route::post('/objek-penilaian', [EvaluationItemController::class, 'store'])->name('evaluation.store');
+    Route::delete('/objek-penilaian/{id}', [EvaluationItemController::class, 'destroy'])->name('evaluation.destroy');
 });
+
+Route::get('/kemaskini/tahun/{year}/student/{studentId}/semak', function ($year, $studentId) {
+    // Fetch student data with relationships
+    $student = Student::with(['class', 'class.year'])
+        ->findOrFail($studentId);
+
+    return Inertia::render('SemakPage', [
+        'student' => $student,
+        'year' => (int)$year
+    ]);
+})->name('student.semak');
 
 
 Route::get('/stats/{year}/{class}', function ($year, $class) {
