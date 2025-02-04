@@ -16,6 +16,7 @@ use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\Year;
 use App\Http\Controllers\EvaluationItemController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 Route::get('/', function () {
@@ -144,6 +145,11 @@ Route::delete('/students/{student}', [StudentController::class, 'destroy'])->nam
 Route::post('/teachers', [TeacherController::class, 'store'])->name('teachers.store');
 Route::put('/teachers/{teacher}', [TeacherController::class, 'update'])->name('teachers.update');
 Route::delete('/teachers/{teacher}', [TeacherController::class, 'destroy'])->name('teachers.destroy');
+
+Route::post('logout', function () {
+    Auth::logout();
+    return redirect('/');
+})->name('logout');
 
 
 Route::middleware('auth')->group(function () {

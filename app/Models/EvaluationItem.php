@@ -6,19 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class EvaluationItem extends Model
 {
-    use HasFactory;
-
-    protected $fillable = [
-        'title',
-        'type',
-        'sequence',
-        'category',
-        'year'
-    ];
-
-    protected $casts = [
-        'sequence' => 'integer',
-        'year' => 'integer'
-    ];
+    protected $fillable = ['title', 'type', 'sequence', 'category', 'year'];
 }
 
