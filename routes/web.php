@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\TeacherDashboardController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -17,7 +16,6 @@ use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\Year;
 use App\Http\Controllers\EvaluationItemController;
-use App\Http\Controllers\StatsController;
 use App\Http\Controllers\StudentEvaluationController;
 use App\Models\Category;
 use App\Models\StudentEvaluation;
@@ -34,8 +32,6 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
-
-
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
@@ -150,10 +146,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['auth'])->group(function () {
         Route::get('/statistik', function () {
             return Inertia::render('Statistik', [
-                'years' => Year::orderBy('name')->get(),
-                'classes' => ClassRoom::with('year')
-                    ->orderBy('name')
-                    ->get()
+                'years' => Year::orderBy('id')->get(),
+                'classes' => ClassRoom::with('year')->get()
             ]);
         })->name('statistik');
     });
@@ -191,9 +185,64 @@ Route::middleware('auth')->group(function () {
     Route::post('/objek-penilaian/import', [EvaluationItemController::class, 'import'])->name('evaluation.import');
     Route::post('/evaluation/store', [StudentEvaluationController::class, 'store'])->name('evaluation.store');
     Route::delete('/objek-penilaian/{id}', [EvaluationItemController::class, 'destroy'])->name('evaluation.destroy');
-    Route::get('/stats/fetch', [StatsController::class, 'fetch'])
-        ->name('stats.fetch');
 });
+
+Route::get('/stats/{year}/{class}', function ($year, $class) {
+    // Base query for students in the selected year
+    $query = Student::where('year_id', $year);
+
+    // If a specific class is selected (not 'all'), filter by class
+    if ($class !== 'all') {
+        $query->where('class_name', $class);
+    }
+
+    // Get all relevant students
+    $students = $query->get();
+
+    // Initialize categories (assuming you have these categories)
+    $categories = [
+        'Akademik' => [
+            'passed' => 0,
+            'not_passed' => 0
+        ],
+        'Kokurikulum' => [
+            'passed' => 0,
+            'not_passed' => 0
+        ],
+        'Sahsiah' => [
+            'passed' => 0,
+            'not_passed' => 0
+        ]
+    ];
+
+    // Count students for each category
+    foreach ($students as $student) {
+        foreach ($categories as $category => &$stats) {
+            // Example logic - adjust according to your actual data structure
+            $isPassed = $student->{"is_{$category}_passed"} ?? false;
+            if ($isPassed) {
+                $stats['passed']++;
+            } else {
+                $stats['not_passed']++;
+            }
+        }
+    }
+
+    // Format response data
+    $responseData = [];
+    foreach ($categories as $category => $stats) {
+        $responseData[] = [
+            'category' => $category,
+            'passed' => $stats['passed'],
+            'not_passed' => $stats['not_passed']
+        ];
+    }
+
+    return response()->json([
+        'total' => $students->count(),
+        'data' => $responseData
+    ]);
+})->name('stats.fetch');
 
 Route::post('/evaluation', [EvaluationItemController::class, 'store'])->name('evaluation.store');
 Route::delete('/evaluation-items/{item}', [EvaluationItemController::class, 'destroy'])->name('evaluation.destroy');

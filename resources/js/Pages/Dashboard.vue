@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { Bar } from 'vue-chartjs';
 import { PrayerTimes, Coordinates, CalculationMethod } from 'adhan';
@@ -15,35 +15,38 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+const props = defineProps({
+  auth: {
+    type: Object,
+    required: true
+  },
+  teacherClasses: {
+    type: Array,
+    default: () => []
+  }
+});
+
 const currentTime = ref(new Date());
 const coordinates = ref({ latitude: 3.139003, longitude: 101.686855 }); // KL coordinates
 const prayerTimes = ref({});
 
-const teacherStats = ref({
-  studentCount: 0,
-  classCount: 0,
-  passedCount: 0,
-  failedCount: 0,
-  achievements: {
-    amaliWuduk: { passed: 0, failed: 0 },
-    amaliSolat: { passed: 0, failed: 0 },
-    bacaan: { passed: 0, failed: 0 },
-    tahfiz: { passed: 0, failed: 0 }
-  }
+// Compute total students and stats for teacher's classes
+const totalStudents = computed(() => {
+  return props.teacherClasses.reduce((total, cls) => total + cls.students_count, 0);
 });
 
-const chartData = ref({
+const chartData = {
   labels: ['Amali Wuduk', 'Amali Solat', 'Bacaan', 'Tahfiz'],
   datasets: [{
     label: 'Lulus',
-    data: [],
+    data: [20, 18, 15, 22],
     backgroundColor: '#10B981'
   }, {
     label: 'Belum Lulus',
-    data: [],
+    data: [5, 7, 10, 3],
     backgroundColor: '#EF4444'
   }]
-});
+};
 
 const chartOptions = {
   responsive: true,
@@ -51,14 +54,10 @@ const chartOptions = {
   scales: {
     y: {
       beginAtZero: true,
-      max: 100
+      max: 25
     }
   }
 };
-
-// Add new refs for loading and error states
-const loading = ref(true);
-const error = ref(null);
 
 const getPrayerTimes = () => {
   const date = new Date();
@@ -73,37 +72,6 @@ const getPrayerTimes = () => {
     Maghrib: prayers.maghrib.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
     Isyak: prayers.isha.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
   };
-};
-
-// Modify the fetchTeacherStats function
-const fetchTeacherStats = async () => {
-  loading.value = true;
-  error.value = null;
-
-  try {
-    const response = await axios.get('/api/teacher/dashboard-stats');
-    teacherStats.value = response.data;
-
-    // Update chart data
-    chartData.value.datasets[0].data = [
-      response.data.achievements.amaliWuduk.passed,
-      response.data.achievements.amaliSolat.passed,
-      response.data.achievements.bacaan.passed,
-      response.data.achievements.tahfiz.passed
-    ];
-
-    chartData.value.datasets[1].data = [
-      response.data.achievements.amaliWuduk.failed,
-      response.data.achievements.amaliSolat.failed,
-      response.data.achievements.bacaan.failed,
-      response.data.achievements.tahfiz.failed
-    ];
-  } catch (err) {
-    error.value = "Failed to load statistics";
-    console.error('Error fetching teacher statistics:', err);
-  } finally {
-    loading.value = false;
-  }
 };
 
 onMounted(() => {
@@ -129,8 +97,6 @@ onMounted(() => {
     currentTime.value = new Date();
     getPrayerTimes(); // Update prayer times every minute
   }, 60000);
-
-  fetchTeacherStats();
 });
 
 const getGreeting = () => {
@@ -144,82 +110,64 @@ const getGreeting = () => {
 
 <template>
   <div class="p-6 space-y-6">
-    <!-- Add loading and error states -->
-    <div v-if="loading" class="text-center py-4">
-      <p class="text-gray-600">Loading statistics...</p>
+    <!-- Greeting Section -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h1 class="text-2xl font-bold text-gray-800">
+        Assalamualaikum, {{ auth.user.name }}
+      </h1>
+      <p class="text-gray-600">{{ getGreeting() }}</p>
     </div>
 
-    <div v-else-if="error" class="bg-red-50 text-red-600 p-4 rounded-lg">
-      {{ error }}
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800">Jumlah Pelajar</h3>
+        <p class="text-3xl font-bold text-mint-600">25</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800">Kelas</h3>
+        <p class="text-3xl font-bold text-mint-600">{{ teacherClasses.length }}</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800">Lulus</h3>
+        <p class="text-3xl font-bold text-green-600">75%</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800">Belum Lulus</h3>
+        <p class="text-3xl font-bold text-red-600">25%</p>
+      </div>
     </div>
 
-    <div v-else>
-      <!-- Greeting Section -->
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <h1 class="text-2xl font-bold text-gray-800">
-          Assalamualaikum, {{ $page.props.auth.user.name }}
-        </h1>
-        <p class="text-gray-600">{{ getGreeting() }}</p>
+    <!-- Prayer Times -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-semibold mb-4">Waktu Solat</h2>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div v-for="(time, prayer) in prayerTimes" :key="prayer" class="text-center p-4 bg-mint-50 rounded-lg">
+          <h3 class="font-semibold text-mint-800">{{ prayer }}</h3>
+          <p class="text-mint-600">{{ time }}</p>
+        </div>
       </div>
+    </div>
 
-      <!-- Stats Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-white rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-800">Jumlah Pelajar</h3>
-          <p class="text-3xl font-bold text-mint-600">{{ teacherStats.studentCount }}</p>
-        </div>
-        <div class="bg-white rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-800">Kelas</h3>
-          <p class="text-3xl font-bold text-mint-600">{{ teacherStats.classCount }}</p>
-        </div>
-        <div class="bg-white rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-800">Lulus</h3>
-          <p class="text-3xl font-bold text-green-600">
-            {{ ((teacherStats.passedCount / (teacherStats.passedCount + teacherStats.failedCount)) * 100).toFixed(0) }}%
-          </p>
-        </div>
-        <div class="bg-white rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-800">Belum Lulus</h3>
-          <p class="text-3xl font-bold text-red-600">
-            {{ ((teacherStats.failedCount / (teacherStats.passedCount + teacherStats.failedCount)) * 100).toFixed(0) }}%
-          </p>
-        </div>
+    <!-- Chart -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-semibold mb-4">Statistik Pencapaian</h2>
+      <div class="relative" style="min-height: 300px">
+        <Bar :data="chartData" :options="chartOptions" />
       </div>
+    </div>
 
-      <!-- Prayer Times -->
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-xl font-semibold mb-4">Waktu Solat</h2>
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div v-for="(time, prayer) in prayerTimes" :key="prayer" class="text-center p-4 bg-mint-50 rounded-lg">
-            <h3 class="font-semibold text-mint-800">{{ prayer }}</h3>
-            <p class="text-mint-600">{{ time }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Chart -->
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-xl font-semibold mb-4">Statistik Pencapaian</h2>
-        <div class="relative" style="min-height: 300px"> <!-- Fixed height container -->
-          <Bar :data="chartData" :options="chartOptions" />
-        </div>
-      </div>
-
-      <!-- Quick Actions -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link href="/kemaskini" class="bg-white rounded-lg shadow-md p-6 hover:bg-gray-50">
-          <h3 class="text-lg font-semibold text-mint-600">Kemaskini Bacaan</h3>
-          <p class="text-gray-600">Urus dan nilai bacaan pelajar</p>
-        </Link>
-        <Link href="/guru" class="bg-white rounded-lg shadow-md p-6 hover:bg-gray-50">
-          <h3 class="text-lg font-semibold text-mint-600">Urus Guru</h3>
-          <p class="text-gray-600">Tetapkan guru dan kelas</p>
-        </Link>
-        <Link href="/statistik" class="bg-white rounded-lg shadow-md p-6 hover:bg-gray-50">
-          <h3 class="text-lg font-semibold text-mint-600">Lihat Statistik</h3>
-          <p class="text-gray-600">Analisis prestasi pelajar</p>
-        </Link>
-      </div>
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <Link
+        v-for="cls in teacherClasses"
+        :key="cls.id"
+        :href="`/kemaskini/tahun/${cls.year_id}/class/${cls.id}`"
+        class="bg-white rounded-lg shadow-md p-6 hover:bg-gray-50"
+      >
+        <h3 class="text-lg font-semibold text-mint-600">Kelas {{ cls.name }}</h3>
+        <p class="text-gray-600">{{ cls.students_count }} Pelajar</p>
+      </Link>
     </div>
   </div>
 </template>
