@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import AppLayout from '@/Layouts/AppLayout.vue';
 import { Bar } from 'vue-chartjs';
 import { PrayerTimes, Coordinates, CalculationMethod } from 'adhan';
 import {
@@ -22,40 +22,47 @@ const props = defineProps({
   },
   teacherClasses: {
     type: Array,
-    default: () => []
+    required: true
   }
 });
 
 const currentTime = ref(new Date());
 const coordinates = ref({ latitude: 3.139003, longitude: 101.686855 }); // KL coordinates
 const prayerTimes = ref({});
+const classStats = ref({});
 
-// Compute total students and stats for teacher's classes
+// Compute total students across all classes
 const totalStudents = computed(() => {
   return props.teacherClasses.reduce((total, cls) => total + cls.students_count, 0);
 });
 
-const chartData = {
-  labels: ['Amali Wuduk', 'Amali Solat', 'Bacaan', 'Tahfiz'],
+// Chart configuration
+const createChartData = (stats) => ({
+  labels: ['Lulus', 'Belum Lulus', 'Belum Disemak'],
   datasets: [{
-    label: 'Lulus',
-    data: [20, 18, 15, 22],
-    backgroundColor: '#10B981'
-  }, {
-    label: 'Belum Lulus',
-    data: [5, 7, 10, 3],
-    backgroundColor: '#EF4444'
+    data: [stats.passed || 0, stats.failed || 0, stats.notEvaluated || 0],
+    backgroundColor: ['#10B981', '#EF4444', '#6B7280']
   }]
-};
+});
 
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  scales: {
-    y: {
-      beginAtZero: true,
-      max: 25
+  plugins: {
+    legend: {
+      position: 'bottom'
     }
+  }
+};
+
+const loadClassStats = async (classId) => {
+  try {
+    const response = await window.axios.get(route('stats.fetch', {
+      class: classId
+    }));
+    classStats.value[classId] = response.data;
+  } catch (error) {
+    console.error(`Failed to load stats for class ${classId}:`, error);
   }
 };
 
@@ -75,6 +82,10 @@ const getPrayerTimes = () => {
 };
 
 onMounted(() => {
+  // Load stats for each class
+  props.teacherClasses.forEach(cls => loadClassStats(cls.id));
+
+  // Initialize prayer times
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -93,9 +104,10 @@ onMounted(() => {
     getPrayerTimes();
   }
 
+  // Update time every minute
   setInterval(() => {
     currentTime.value = new Date();
-    getPrayerTimes(); // Update prayer times every minute
+    getPrayerTimes();
   }, 60000);
 });
 
@@ -122,19 +134,11 @@ const getGreeting = () => {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <div class="bg-white rounded-lg shadow-md p-6">
         <h3 class="text-lg font-semibold text-gray-800">Jumlah Pelajar</h3>
-        <p class="text-3xl font-bold text-mint-600">25</p>
+        <p class="text-3xl font-bold text-mint-600">{{ totalStudents }}</p>
       </div>
       <div class="bg-white rounded-lg shadow-md p-6">
         <h3 class="text-lg font-semibold text-gray-800">Kelas</h3>
         <p class="text-3xl font-bold text-mint-600">{{ teacherClasses.length }}</p>
-      </div>
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-lg font-semibold text-gray-800">Lulus</h3>
-        <p class="text-3xl font-bold text-green-600">75%</p>
-      </div>
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-lg font-semibold text-gray-800">Belum Lulus</h3>
-        <p class="text-3xl font-bold text-red-600">25%</p>
       </div>
     </div>
 
@@ -149,25 +153,54 @@ const getGreeting = () => {
       </div>
     </div>
 
-    <!-- Chart -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-      <h2 class="text-xl font-semibold mb-4">Statistik Pencapaian</h2>
-      <div class="relative" style="min-height: 300px">
-        <Bar :data="chartData" :options="chartOptions" />
+    <!-- Class Statistics -->
+    <div class="space-y-6">
+      <div v-for="cls in teacherClasses" :key="cls.id" class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-xl font-semibold mb-4">{{ cls.name }}</h3>
+
+        <div v-if="classStats[cls.id]" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-green-50 p-4 rounded-lg">
+              <p class="text-sm text-green-600">Lulus</p>
+              <p class="text-2xl font-bold text-green-700">
+                {{ classStats[cls.id].passed }}
+                <span class="text-sm font-normal ml-1">
+                  ({{ ((classStats[cls.id].passed / classStats[cls.id].total) * 100).toFixed(1) }}%)
+                </span>
+              </p>
+            </div>
+            <div class="bg-red-50 p-4 rounded-lg">
+              <p class="text-sm text-red-600">Belum Lulus</p>
+              <p class="text-2xl font-bold text-red-700">
+                {{ classStats[cls.id].failed }}
+                <span class="text-sm font-normal ml-1">
+                  ({{ ((classStats[cls.id].failed / classStats[cls.id].total) * 100).toFixed(1) }}%)
+                </span>
+              </p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-600">Belum Disemak</p>
+              <p class="text-2xl font-bold text-gray-700">
+                {{ classStats[cls.id].notEvaluated }}
+                <span class="text-sm font-normal ml-1">
+                  ({{ ((classStats[cls.id].notEvaluated / classStats[cls.id].total) * 100).toFixed(1) }}%)
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <div class="h-64">
+            <Bar
+              :data="createChartData(classStats[cls.id])"
+              :options="chartOptions"
+            />
+          </div>
+        </div>
+        <div v-else class="text-center py-8 text-gray-500">
+          Loading statistics...
+        </div>
       </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <Link
-        v-for="cls in teacherClasses"
-        :key="cls.id"
-        :href="`/kemaskini/tahun/${cls.year_id}/class/${cls.id}`"
-        class="bg-white rounded-lg shadow-md p-6 hover:bg-gray-50"
-      >
-        <h3 class="text-lg font-semibold text-mint-600">Kelas {{ cls.name }}</h3>
-        <p class="text-gray-600">{{ cls.students_count }} Pelajar</p>
-      </Link>
-    </div>
   </div>
 </template>

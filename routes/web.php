@@ -35,9 +35,22 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+    $teacherClasses = Auth::user()->classes()
+        ->with('students') // Now this relationship will work
+        ->get()
+        ->map(function($class) {
+            return [
+                'id' => $class->id,
+                'name' => $class->name,
+                'year_id' => $class->year_id,
+                'students_count' => $class->students->count()
+            ];
+        });
 
+    return Inertia::render('Dashboard', [
+        'teacherClasses' => $teacherClasses
+    ]);
+})->middleware(['auth', 'verified'])->name('dashboard');
 Route::middleware('auth')->group(function () {
     Route::get('/login-page', function () {
         return Inertia::render('Login', [
@@ -166,6 +179,13 @@ Route::delete('/students/{student}', [StudentController::class, 'destroy'])->nam
 Route::post('/teachers', [TeacherController::class, 'store'])->name('teachers.store');
 Route::put('/teachers/{teacher}', [TeacherController::class, 'update'])->name('teachers.update');
 Route::delete('/teachers/{teacher}', [TeacherController::class, 'destroy'])->name('teachers.destroy');
+Route::delete('/api/classes/{id}', [ClassController::class, 'destroy'])
+    ->middleware(['auth'])
+    ->name('classes.destroy');
+
+    Route::post('/api/evaluation-objects/import', [EvaluationItemController::class, 'import'])
+    ->middleware(['auth'])
+    ->name('evaluation-objects.import');
 
 Route::post('logout', function () {
     Auth::logout();
@@ -201,6 +221,8 @@ Route::put('/users/{user}/classes', function (User $user, Request $request) {
     return redirect()->back();
 })->name('users.update.classes');
 
-Route::post('/evaluation/import', [EvaluationItemController::class, 'importCsv'])->name('evaluation.import');
+Route::post('/evaluation/import', [EvaluationItemController::class, 'importCsv'])
+    ->name('evaluation.import')
+    ->middleware(['auth']);
 
 require __DIR__ . '/auth.php';

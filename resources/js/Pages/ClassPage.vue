@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
+import axios from 'axios';
 
 const props = defineProps({
   year: Number,
@@ -29,6 +30,17 @@ const closeModal = () => {
   showModal.value = false;
   form.reset();
 };
+
+const deleteClass = async (classId) => {
+  if (confirm('Are you sure you want to delete this class?')) {
+    try {
+      await axios.delete(`/api/classes/${classId}`);
+      window.location.reload();
+    } catch (error) {
+      console.error('Error deleting class:', error);
+    }
+  }
+};
 </script>
 
 
@@ -44,18 +56,22 @@ const closeModal = () => {
       </div>
 
       <div class="space-y-6">
-        <Link v-for="(class_, index) in classes" :key="class_.id" :href="`/kemaskini/tahun/${year}/class/${class_.id}`"
-          class="block bg-white rounded-lg shadow-md p-6 hover:bg-gray-50">
-        <div class="flex items-center">
-          <div class="w-12 h-12 bg-mint-100 rounded-full flex items-center justify-center text-mint-600 mr-4">
-            {{ index + 1 }}
-          </div>
-          <div>
-            <h3 class="text-lg font-medium text-gray-900">{{ class_.name }}</h3>
-            <p class="text-sm text-gray-600">{{ class_.students }}</p>
-          </div>
+        <div v-for="(class_, index) in classes" :key="class_.id" class="flex items-center justify-between bg-white rounded-lg shadow-md p-6 hover:bg-gray-50">
+          <Link :href="`/kemaskini/tahun/${year}/class/${class_.id}`" class="flex-1">
+            <div class="flex items-center">
+              <div class="w-12 h-12 bg-mint-100 rounded-full flex items-center justify-center text-mint-600 mr-4">
+                {{ index + 1 }}
+              </div>
+              <div>
+                <h3 class="text-lg font-medium text-gray-900">{{ class_.name }}</h3>
+                <p class="text-sm text-gray-600">{{ class_.students }}</p>
+              </div>
+            </div>
+          </Link>
+          <button @click="deleteClass(class_.id)" class="p-2 rounded-lg bg-red-500 text-white hover:bg-red-600">
+            <i class="fas fa-trash-alt"></i>
+          </button>
         </div>
-        </Link>
       </div>
     </div>
 

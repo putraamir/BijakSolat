@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import axios from 'axios';
 
 const props = defineProps({
     years: Array,
@@ -128,6 +129,25 @@ const submitForm = () => {
             window.location.reload();
         }
     });
+};
+
+const importCSV = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('csv_file', file);
+
+  try {
+    await axios.post('/api/evaluation-objects/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    window.location.reload();
+  } catch (error) {
+    console.error('Error importing CSV:', error);
+  }
 };
 </script>
 

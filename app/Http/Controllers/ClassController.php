@@ -29,4 +29,11 @@ class ClassController extends Controller
             'classes' => $classes
         ]);
     }
+    public function destroy($id)
+{
+    $class = ClassRoom::findOrFail($id);
+    $class->delete();
+
+    return response()->json(['message' => 'Class deleted successfully']);
+}
 }
