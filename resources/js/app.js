@@ -1,6 +1,6 @@
 // resources/js/app.js
-import '../css/app.css';
 import './bootstrap';
+import '../css/app.css';
 //import AuthLayout from '../js/Layouts/AuthenticatedLayout.vue'
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
@@ -10,7 +10,7 @@ import AppLayout from './Layouts/AppLayout.vue';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
-createInertiaApp({
+const app = createInertiaApp({
     title: (title) => `${title} - ${appName}`,
     resolve: async (name) => {
         const page = await resolvePageComponent(

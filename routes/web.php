@@ -256,4 +256,8 @@ Route::delete('/evaluation/clear/{year}', [EvaluationItemController::class, 'cle
     ->name('evaluation.clear')
     ->middleware(['auth']);
 
+Route::get('/offline', function () {
+    return view('offline');
+});
+
 require __DIR__ . '/auth.php';

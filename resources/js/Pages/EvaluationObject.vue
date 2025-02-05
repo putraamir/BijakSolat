@@ -175,15 +175,19 @@ const clearYear = () => {
                 </select>
                 <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
                     <button @click="showAddModal = true"
-                        class="w-full md:w-auto px-4 py-2 bg-mint-600 text-white rounded-lg hover:bg-mint-700 mb-2 md:mb-0">
-                        Tambah Penilaian
+                        class="w-full md:w-auto p-2 bg-mint-600 text-white rounded-lg hover:bg-mint-700 mb-2 md:mb-0"
+                        title="Tambah Penilaian">
+                        <i class="fas fa-plus"></i>
                     </button>
                     <button @click="showCsvModal = true"
-                        class="w-full md:w-auto px-4 py-2 bg-mint-600 text-white rounded-lg hover:bg-mint-700">
-                        Import CSV
+                        class="w-full md:w-auto p-2 bg-mint-600 text-white rounded-lg hover:bg-mint-700"
+                        title="Import CSV">
+                        <i class="fas fa-file-import"></i>
                     </button>
-                    <button @click="clearYear" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 ml-2">
-                        Clear All
+                    <button @click="clearYear"
+                        class="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                        title="Clear All">
+                        <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </div>
