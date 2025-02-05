@@ -1,14 +1,11 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Models\Category;
 use App\Models\Student;
 use App\Models\EvaluationItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-
 class StatsController extends Controller
 {
     public function fetch(Request $request)
@@ -21,34 +18,26 @@ class StatsController extends Controller
                 ->whereHas('class', function ($q) use ($request) {
                     $q->where('year_id', $request->year);
                 });
-
             $totalStudents = $studentsQuery->count();
-
             // Overall stats calculation
             $totalNotEvaluated = (clone $studentsQuery)
                 ->whereDoesntHave('evaluations')
                 ->count();
-
             $totalFailed = (clone $studentsQuery)
                 ->whereHas('evaluations', function ($q) {
                     $q->where('status', 'not_passed');
                 })
                 ->count();
-
             $totalPassed = $totalStudents - ($totalFailed + $totalNotEvaluated);
-
             // For category summary
             $categoryStats = [];
             // For detailed view
             $categoryDetails = [];
-
             $categories = Category::where('year_id', $request->year)
                 ->with('evaluationItems')
                 ->get();
-
             foreach ($categories as $category) {
                 $itemIds = $category->evaluationItems->pluck('id');
-
                 // Summary stats per category
                 $passedCount = (clone $studentsQuery)
                     ->whereHas('evaluations', function ($q) use ($itemIds) {
@@ -56,23 +45,19 @@ class StatsController extends Controller
                             ->where('status', 'passed');
                     }, '=', count($itemIds))
                     ->count();
-
                 $failedCount = (clone $studentsQuery)
                     ->whereHas('evaluations', function ($q) use ($itemIds) {
                         $q->whereIn('evaluation_item_id', $itemIds)
                             ->where('status', 'not_passed');
                     })
                     ->count();
-
                 $notEvaluatedCount = $totalStudents - ($passedCount + $failedCount);
-
                 $categoryStats[] = [
                     'name' => $category->name,
                     'passed' => $passedCount,
                     'failed' => $failedCount,
                     'notEvaluated' => $notEvaluatedCount
                 ];
-
                 // Detailed stats per item
                 $itemStats = [];
                 foreach ($category->evaluationItems as $item) {
@@ -83,7 +68,6 @@ class StatsController extends Controller
                                 ->where('status', 'passed');
                         })
                         ->count();
-
                     // Count failed students for this item
                     $failedCount = (clone $studentsQuery)
                         ->whereHas('evaluations', function ($q) use ($item) {
@@ -91,10 +75,8 @@ class StatsController extends Controller
                                 ->where('status', 'not_passed');
                         })
                         ->count();
-
                     // Calculate not evaluated
                     $notEvaluatedCount = $totalStudents - ($passedCount + $failedCount);
-
                     $itemStats[] = [
                         'name' => $item->title,
                         'passed' => $passedCount,
@@ -102,7 +84,6 @@ class StatsController extends Controller
                         'notEvaluated' => $notEvaluatedCount
                     ];
                 }
-
                 $categoryDetails[$category->name] = [
                     'labels' => collect($itemStats)->pluck('name'),
                     'datasets' => [
@@ -124,7 +105,6 @@ class StatsController extends Controller
                     ]
                 ];
             }
-
             return response()->json([
                 'total' => $totalStudents,
                 'passed' => $totalPassed,
