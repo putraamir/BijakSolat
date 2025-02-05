@@ -46,8 +46,8 @@ const deleteClass = async (classId) => {
 
 
 <template>
-  <div class="bg-mint-50 min-h-screen p-6 relative">
-    <div class="max-w-4xl mx-auto">
+  <div class="flex-1 bg-white-100">
+    <div class="p-4 md:p-6 space-y-4 md:space-y-6">
       <div class="flex items-center mb-8">
         <Link href="/kemaskini" class="mr-4 p-2 rounded-lg bg-mint-100 hover:bg-mint-200">
         <i class="fas fa-arrow-left"></i>

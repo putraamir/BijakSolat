@@ -108,8 +108,8 @@ const clearAllStudents = () => {
 </script>
 
 <template>
-  <div class="bg-mint-50 min-h-screen p-6">
-    <div class="max-w-4xl mx-auto">
+  <div class="flex-1 bg-white-100">
+    <div class="p-4 md:p-6 space-y-4 md:space-y-6">
       <!-- Header with Back Button -->
       <div class="flex items-center justify-between mb-8">
         <div class="flex items-center">
@@ -123,8 +123,8 @@ const clearAllStudents = () => {
           </div>
         </div>
 
-        <button @click="clearAllStudents" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 
-                 transition-colors duration-200 flex items-center gap-2 
+        <button @click="clearAllStudents" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700
+                 transition-colors duration-200 flex items-center gap-2
                  shadow-sm hover:shadow-md">
           <i class="fas fa-trash"></i>
           <span class="hidden sm:inline">Clear All Students</span>

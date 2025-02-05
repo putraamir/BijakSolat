@@ -192,6 +192,19 @@ Route::post('logout', function () {
     return redirect('/');
 })->name('logout');
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/tetapan', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/password', [ProfileController::class, 'updatePassword'])->name('password.update');
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])
+    ->name('profile.avatar.update')
+    ->middleware(['auth', 'verified']);
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])
+    ->name('profile.avatar.update')
+    ->middleware('auth');
+});
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/objek-penilaian', function (Request $request) {
@@ -224,5 +237,19 @@ Route::put('/users/{user}/classes', function (User $user, Request $request) {
 Route::post('/evaluation/import', [EvaluationItemController::class, 'importCsv'])
     ->name('evaluation.import')
     ->middleware(['auth']);
+
+    Route::get('/test-cloudinary', function() {
+        try {
+            $cloudinary = new \App\Services\CloudinaryService();
+            dd([
+                'cloud_name' => config('services.cloudinary.cloud_name'),
+                'api_key_exists' => !empty(config('services.cloudinary.api_key')),
+                'api_secret_exists' => !empty(config('services.cloudinary.api_secret')),
+                'cloudinary_initialized' => $cloudinary !== null
+            ]);
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+        }
+    });
 
 require __DIR__ . '/auth.php';

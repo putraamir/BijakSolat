@@ -1,7 +1,7 @@
 <!-- Tetapan.vue -->
 <script setup>
-import { ref } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { ref, onUnmounted } from 'vue';
+import { useForm, router } from '@inertiajs/vue3';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
@@ -49,19 +49,45 @@ const updatePassword = () => {
 const avatarPreview = ref(null);
 const avatarFile = ref(null);
 
-const handleAvatarUpload = (event) => {
+const handleAvatarUpload = async (event) => {
   const file = event.target.files[0];
-  if (file) {
-    avatarFile.value = file;
+  if (!file) return;
 
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      avatarPreview.value = e.target.result;
-    };
-    reader.readAsDataURL(file);
+  // Create preview URL
+  avatarPreview.value = URL.createObjectURL(file);
+
+  const formData = new FormData();
+  formData.append('avatar', file);
+
+  try {
+    await router.post(route('profile.avatar.update'), formData, {
+      forceFormData: true,
+      preserveScroll: true,
+      onSuccess: () => {
+        // Success handling
+        console.log('Upload successful');
+      },
+      onError: (errors) => {
+        console.error('Upload failed:', errors);
+        avatarPreview.value = null;
+      },
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Accept': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    avatarPreview.value = null;
   }
 };
+
+onUnmounted(() => {
+  // Clean up preview URL
+  if (avatarPreview.value) {
+    URL.revokeObjectURL(avatarPreview.value);
+  }
+});
 </script>
 
 <template>

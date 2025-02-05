@@ -23,8 +23,13 @@
         <div class="p-4 border-b border-mint-200">
           <template v-if="isAuthenticated">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-mint-200 flex items-center justify-center">
-                <img :src="userAvatar || '/default-avatar.png'" alt="profile" class="rounded-full" />
+              <div class="w-10 h-10 rounded-full bg-mint-200 flex items-center justify-center overflow-hidden">
+                <img
+                  :src="userAvatar || '/images/default-avatar.png'"
+                  :alt="userName"
+                  class="w-full h-full object-cover"
+                  @error="handleImageError"
+                />
               </div>
               <div v-if="isExpanded" class="flex-1">
                 <h3 class="font-medium">{{ userName }}</h3>
@@ -152,6 +157,10 @@
       userAvatar: {
         type: String,
         default: null
+      },
+      user: {
+        type: Object,
+        default: null
       }
     },
 
@@ -192,7 +201,8 @@
         guestBottomMenuItems: [
           { name: 'Bantuan', path: '/bantuan', icon: 'fas fa-question-circle' },
           { name: 'Daftar', path: '/register', icon: 'fas fa-user-plus' }
-        ]
+        ],
+        fallbackAvatar: '/default-avatar.jpg'
       }
     },
 
@@ -213,6 +223,10 @@
         if (item.action === 'logout') {
           this.logout();
         }
+      },
+
+      handleImageError(e) {
+        e.target.src = this.fallbackAvatar;
       }
     },
 

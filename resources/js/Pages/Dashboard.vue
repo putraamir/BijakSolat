@@ -133,107 +133,122 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-6 space-y-6">
-    <!-- Greeting Section -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-      <h1 class="text-2xl font-bold text-gray-800">
-        Assalamualaikum, {{ auth.user.name }}
-      </h1>
-      <p class="text-gray-600">{{ getGreeting() }}</p>
-    </div>
 
-         <!-- Stats Grid -->
-         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-        <div class="bg-white rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-800">Jumlah Pelajar</h3>
-          <p class="text-3xl font-bold text-mint-600">{{ totalStudents }}</p>
+      <div class="p-4 md:p-6 space-y-4 md:space-y-6">
+        <!-- Greeting Section -->
+        <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
+          <h1 class="text-xl md:text-2xl font-bold text-gray-800">
+            Assalamualaikum, {{ auth.user.name }}
+          </h1>
+          <p class="text-sm md:text-base text-gray-600">{{ getGreeting() }}</p>
         </div>
-        <div class="bg-white rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-800">Kelas</h3>
-          <p class="text-3xl font-bold text-mint-600">{{ teacherClasses.length }}</p>
-        </div>
-      </div>
 
-    <!-- Prayer Times -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-      <h2 class="text-xl font-semibold mb-4">Waktu Solat</h2>
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div v-for="(time, prayer) in prayerTimes" :key="prayer" class="text-center p-4 bg-mint-50 rounded-lg">
-          <h3 class="font-semibold text-mint-800">{{ prayer }}</h3>
-          <p class="text-mint-600">{{ time }}</p>
+        <!-- Stats Grid - 1 column on mobile, 2 on larger screens -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+          <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
+            <h3 class="text-base md:text-lg font-semibold text-gray-800">Jumlah Pelajar</h3>
+            <p class="text-2xl md:text-3xl font-bold text-mint-600">{{ totalStudents }}</p>
+          </div>
+          <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
+            <h3 class="text-base md:text-lg font-semibold text-gray-800">Kelas</h3>
+            <p class="text-2xl md:text-3xl font-bold text-mint-600">{{ teacherClasses.length }}</p>
+          </div>
         </div>
-      </div>
-    </div>
+
+        <!-- Prayer Times - 2 columns on mobile, 5 on larger screens -->
+        <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
+          <h2 class="text-lg md:text-xl font-semibold mb-4">Waktu Solat</h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
+            <div v-for="(time, prayer) in prayerTimes" :key="prayer"
+                 class="text-center p-3 md:p-4 bg-mint-50 rounded-lg">
+              <h3 class="text-sm md:text-base font-semibold text-mint-800">{{ prayer }}</h3>
+              <p class="text-sm md:text-base text-mint-600">{{ time }}</p>
+            </div>
+          </div>
+        </div>
 
         <!-- Class Statistics -->
-        <div class="space-y-6">
-        <div v-for="cls in teacherClasses" :key="cls.id" class="bg-white rounded-lg shadow-md p-6">
-          <h3 class="text-xl font-semibold mb-4">{{ cls.name }}</h3>
+        <div class="space-y-4 md:space-y-6">
+          <div v-for="cls in teacherClasses" :key="cls.id"
+               class="bg-white rounded-lg shadow-md p-4 md:p-6">
+            <h3 class="text-lg md:text-xl font-semibold mb-4">{{ cls.name }}</h3>
 
-          <div v-if="classStats[cls.id]" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="bg-green-50 p-4 rounded-lg">
-                <p class="text-sm text-green-600">Lulus</p>
-                <p class="text-2xl font-bold text-green-700">
-                  {{ classStats[cls.id].passed }}
-                  <span class="text-sm font-normal ml-1" v-if="classStats[cls.id].total > 0">
-                    ({{ ((classStats[cls.id].passed / classStats[cls.id].total) * 100).toFixed(1) }}%)
-                  </span>
-                </p>
-              </div>
-              <div class="bg-red-50 p-4 rounded-lg">
-                <p class="text-sm text-red-600">Belum Lulus</p>
-                <p class="text-2xl font-bold text-red-700">
-                  {{ classStats[cls.id].failed }}
-                  <span class="text-sm font-normal ml-1" v-if="classStats[cls.id].total > 0">
-                    ({{ ((classStats[cls.id].failed / classStats[cls.id].total) * 100).toFixed(1) }}%)
-                  </span>
-                </p>
-              </div>
-              <div class="bg-indigo-50 p-4 rounded-lg">
-                <p class="text-sm text-indigo-600">Belum Disemak</p>
-                <p class="text-2xl font-bold text-indigo-700">
-                  {{ classStats[cls.id].notEvaluated }}
-                  <span class="text-sm font-normal ml-1" v-if="classStats[cls.id].total > 0">
-                    ({{ ((classStats[cls.id].notEvaluated / classStats[cls.id].total) * 100).toFixed(1) }}%)
-                  </span>
-                </p>
-              </div>
-            </div>
+            <div v-if="classStats[cls.id]" class="space-y-4">
+              <!-- Status Cards - Stack on mobile -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                <div class="bg-green-50 p-3 md:p-4 rounded-lg">
+                  <p class="text-xs md:text-sm text-green-600">Lulus</p>
+                  <div class="flex items-baseline">
+                    <p class="text-xl md:text-2xl font-bold text-green-700">
+                      {{ classStats[cls.id].passed }}
+                    </p>
+                    <span class="text-xs md:text-sm font-normal ml-1" v-if="classStats[cls.id].total > 0">
+                      ({{ ((classStats[cls.id].passed / classStats[cls.id].total) * 100).toFixed(1) }}%)
+                    </span>
+                  </div>
+                </div>
 
-            <div class="grid md:grid-cols-2 gap-6">
-              <!-- Overall Pie Chart -->
-              <div class="bg-white p-4 rounded-lg">
-                <h4 class="text-lg font-semibold mb-4">Keseluruhan</h4>
-                <div class="h-64">
-                  <Pie
-                    :data="createChartData(classStats[cls.id])"
-                    :options="chartOptions"
-                  />
+                <div class="bg-red-50 p-3 md:p-4 rounded-lg">
+                  <p class="text-xs md:text-sm text-red-600">Belum Lulus</p>
+                  <div class="flex items-baseline">
+                    <p class="text-xl md:text-2xl font-bold text-red-700">
+                      {{ classStats[cls.id].failed }}
+                    </p>
+                    <span class="text-xs md:text-sm font-normal ml-1" v-if="classStats[cls.id].total > 0">
+                      ({{ ((classStats[cls.id].failed / classStats[cls.id].total) * 100).toFixed(1) }}%)
+                    </span>
+                  </div>
+                </div>
+
+                <div class="bg-indigo-50 p-3 md:p-4 rounded-lg">
+                  <p class="text-xs md:text-sm text-indigo-600">Belum Disemak</p>
+                  <div class="flex items-baseline">
+                    <p class="text-xl md:text-2xl font-bold text-indigo-700">
+                      {{ classStats[cls.id].notEvaluated }}
+                    </p>
+                    <span class="text-xs md:text-sm font-normal ml-1" v-if="classStats[cls.id].total > 0">
+                      ({{ ((classStats[cls.id].notEvaluated / classStats[cls.id].total) * 100).toFixed(1) }}%)
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <!-- Category Stats -->
-              <div class="bg-white p-4 rounded-lg">
-                <h4 class="text-lg font-semibold mb-4">Mengikut Kategori</h4>
-                <div class="space-y-4">
-                  <div v-for="category in classStats[cls.id].categoryStats" :key="category.name"
-                    class="p-3 bg-gray-50 rounded-lg">
-                    <p class="font-medium mb-2">{{ category.name }}</p>
-                    <div class="flex gap-2 text-sm">
-                      <span class="text-green-600">Lulus: {{ category.passed }}</span>
-                      <span class="text-red-600">Belum Lulus: {{ category.failed }}</span>
-                      <span class="text-indigo-600">Belum Disemak: {{ category.notEvaluated }}</span>
+              <!-- Charts and Categories - Stack on mobile -->
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                <!-- Pie Chart -->
+                <div class="bg-white p-4 rounded-lg shadow-sm">
+                  <h4 class="text-base md:text-lg font-semibold mb-4">Keseluruhan</h4>
+                  <div class="h-48 md:h-64">
+                    <Pie
+                      :data="createChartData(classStats[cls.id])"
+                      :options="chartOptions"
+                    />
+                  </div>
+                </div>
+
+                <!-- Category Stats -->
+                <div class="bg-white p-4 rounded-lg shadow-sm">
+                  <h4 class="text-base md:text-lg font-semibold mb-4">Mengikut Kategori</h4>
+                  <div class="space-y-3">
+                    <div v-for="category in classStats[cls.id].categoryStats"
+                         :key="category.name"
+                         class="p-3 bg-gray-50 rounded-lg">
+                      <p class="text-sm md:text-base font-medium mb-2">{{ category.name }}</p>
+                      <div class="flex flex-wrap gap-2 text-xs md:text-sm">
+                        <span class="text-green-600">Lulus: {{ category.passed }}</span>
+                        <span class="text-red-600">Belum Lulus: {{ category.failed }}</span>
+                        <span class="text-indigo-600">Belum Disemak: {{ category.notEvaluated }}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div v-else class="text-center py-8 text-gray-500">
-            Loading statistics...
+            <div v-else class="text-center py-6 text-sm text-gray-500">
+              Loading statistics...
+            </div>
           </div>
         </div>
       </div>
-  </div>
-</template>
+    
+  </template>

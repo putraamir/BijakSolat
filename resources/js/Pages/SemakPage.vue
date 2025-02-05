@@ -57,12 +57,12 @@ const goBack = () => {
 </script>
 
 <template>
-  <div class="bg-mint-50 min-h-screen p-6">
-    <div class="max-w-4xl mx-auto">
+  <div class="flex-1 bg-white-100">
+    <div class="p-4 md:p-6 space-y-4 md:space-y-6">
       <!-- Back Button and Title -->
       <div class="flex items-center space-x-4 mb-6">
-        <button @click="goBack" class="p-2 rounded-lg bg-mint-100 hover:bg-mint-200 
-                 transition-colors duration-200 flex items-center 
+        <button @click="goBack" class="p-2 rounded-lg bg-mint-100 hover:bg-mint-200
+                 transition-colors duration-200 flex items-center
                  justify-center shadow-sm hover:shadow-md">
           <i class="fas fa-arrow-left text-mint-600"></i>
         </button>

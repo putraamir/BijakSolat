@@ -43,9 +43,10 @@ const editableClasses = computed(() => {
 </script>
 
 <template>
-  <AppLayout>
-    <div class="min-h-screen bg-mint-50 p-6">
-      <div class="max-w-7xl mx-auto">
+
+    <div class="flex min-h-screen">
+        <div class="flex-1 bg-white-100">
+            <div class="p-4 md:p-6 space-y-4 md:space-y-6">
         <!-- Header -->
         <div class="mb-8">
           <h1 class="text-2xl font-bold text-gray-800">Senarai Pengguna</h1>
@@ -127,5 +128,6 @@ const editableClasses = computed(() => {
         </div>
       </div>
     </div>
-  </AppLayout>
+    </div>
+
 </template>

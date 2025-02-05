@@ -177,101 +177,118 @@ const formatClassName = (name) => {
 };
 </script>
 
+
+
 <template>
-  <AppLayout>
-    <div class="min-h-screen bg-mint-50 p-6">
-      <div class="max-w-7xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8">
-          <h1 class="text-2xl font-bold text-gray-800">Statistik Pencapaian</h1>
-          <p class="text-gray-600">Analisis pencapaian pelajar mengikut tahun dan kelas</p>
-        </div>
+  
+        <div class="flex-1 bg-white-100">
+            <div class="p-4 md:p-6 space-y-4 md:space-y-6">
+      <!-- Header -->
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Statistik Pencapaian</h1>
+        <p class="text-gray-600">Analisis pencapaian pelajar mengikut tahun dan kelas</p>
+      </div>
 
-        <!-- Filters -->
-        <div class="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div class="flex gap-4">
-            <div class="w-48">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Tahun</label>
-              <select v-model="selectedYear"
-                class="w-full rounded-md border-gray-300 text-sm focus:border-mint-500 focus:ring-mint-500">
-                <option v-for="year in props.years" :key="year.id" :value="year.id">
-                  {{ year.name }}
-                </option>
-              </select>
-            </div>
-            <div class="w-48">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
-              <select v-model="selectedClass"
-                class="w-full rounded-md border-gray-300 text-sm focus:border-mint-500 focus:ring-mint-500">
-                <option value="all">Semua Kelas</option>
-                <option v-for="class_ in filteredClasses" :key="class_.id" :value="class_.id">
-                  {{ class_.name }}
-                </option>
-              </select>
-            </div>
+      <!-- Filters (Stacked on Mobile) -->
+      <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div class="flex flex-col md:flex-row gap-4">
+          <div class="w-full md:w-48">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tahun</label>
+            <select
+              v-model="selectedYear"
+              class="w-full rounded-md border-gray-300 text-sm focus:border-mint-500 focus:ring-mint-500"
+            >
+              <option v-for="year in props.years" :key="year.id" :value="year.id">
+                {{ year.name }}
+              </option>
+            </select>
           </div>
-        </div>
-
-        <!-- Statistics Grid -->
-        <div class="grid gap-6">
-          <!-- Summary Cards -->
-          <div class="grid gap-6 md:grid-cols-3">
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h4 class="text-sm font-medium text-gray-500">Jumlah Pelajar</h4>
-              <p class="text-3xl font-bold mt-2">{{ stats.total }}</p>
-            </div>
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h4 class="text-sm font-medium text-gray-500">Lulus</h4>
-              <p class="text-3xl font-bold text-green-600 mt-2">
-                {{ stats.passed }} ({{ passRate }}%)
-              </p>
-            </div>
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h4 class="text-sm font-medium text-gray-500">Belum Lulus dan Belum Disemak</h4>
-              <p class="text-3xl font-bold text-red-600 mt-2">
-                {{ stats.failed + stats.notEvaluated }}
-              </p>
-            </div>
-          </div>
-
-          <div v-if="loading" class="text-center py-4">
-            Loading statistics...
-          </div>
-
-          <!-- Overview Charts -->
-          <div class="grid md:grid-cols-2 gap-6">
-            <!-- Overall Progress Pie Chart -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h3 class="text-lg font-semibold mb-4">Pencapaian Keseluruhan</h3>
-              <div class="h-64">
-                <Pie :data="pieChartData" :options="pieChartOptions" />
-              </div>
-            </div>
-
-            <!-- Category Progress Bar Chart -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h3 class="text-lg font-semibold mb-4">Pencapaian Mengikut Kategori</h3>
-              <div class="h-64">
-                <Bar :data="categoryBarChartData" :options="barChartOptions" />
-              </div>
-            </div>
-          </div>
-
-          <!-- Detailed Category Charts -->
-          <div class="grid md:grid-cols-2 gap-6">
-            <template v-for="(categoryData, categoryName) in categoryDetailCharts" :key="categoryName">
-              <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-semibold mb-4">
-                  {{ categoryName }} - Pencapaian Terperinci
-                </h3>
-                <div class="h-64">
-                  <Bar :data="categoryData" :options="barChartOptions" />
-                </div>
-              </div>
-            </template>
+          <div class="w-full md:w-48">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
+            <select
+              v-model="selectedClass"
+              class="w-full rounded-md border-gray-300 text-sm focus:border-mint-500 focus:ring-mint-500"
+            >
+              <option value="all">Semua Kelas</option>
+              <option
+                v-for="class_ in filteredClasses"
+                :key="class_.id"
+                :value="class_.id"
+              >
+                {{ class_.name }}
+              </option>
+            </select>
           </div>
         </div>
       </div>
+
+      <!-- Statistics Grid -->
+      <div class="grid gap-6">
+        <!-- Summary Cards (Stacked on Mobile) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div
+            v-for="(card, index) in [
+              { title: 'Jumlah Pelajar', value: stats.total, color: 'text-gray-900' },
+              { title: 'Lulus', value: `${stats.passed} (${passRate}%)`, color: 'text-green-600' },
+              { title: 'Belum Lulus dan Belum Disemak', value: stats.failed + stats.notEvaluated, color: 'text-red-600' }
+            ]"
+            :key="index"
+            class="bg-white rounded-lg shadow-md p-4 md:p-6"
+          >
+            <h4 class="text-sm font-medium text-gray-500">{{ card.title }}</h4>
+            <p :class="`text-xl md:text-3xl font-bold mt-2 ${card.color}`">
+              {{ card.value }}
+            </p>
+          </div>
+        </div>
+
+        <div v-if="loading" class="text-center py-4">
+          Sedang memuatkan statistik...
+        </div>
+
+        <!-- Charts (Responsive Layout) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Overall Progress Pie Chart -->
+          <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
+            <h3 class="text-lg font-semibold mb-4">Pencapaian Keseluruhan</h3>
+            <div class="h-48 md:h-64">
+              <Pie :data="pieChartData" :options="pieChartOptions" />
+            </div>
+          </div>
+
+          <!-- Category Progress Bar Chart -->
+          <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
+            <h3 class="text-lg font-semibold mb-4">Pencapaian Mengikut Kategori</h3>
+            <div class="h-48 md:h-64">
+              <Bar :data="categoryBarChartData" :options="barChartOptions" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Category Charts (Responsive Grid) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <template v-for="(categoryData, categoryName) in categoryDetailCharts" :key="categoryName">
+            <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
+              <h3 class="text-lg font-semibold mb-4">
+                {{ categoryName }} - Pencapaian Terperinci
+              </h3>
+              <div class="h-48 md:h-64">
+                <Bar :data="categoryData" :options="barChartOptions" />
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
     </div>
-  </AppLayout>
+  </div>
+
 </template>
+
+<style scoped>
+/* Ensure responsive typography */
+@media (max-width: 640px) {
+  .text-3xl {
+    font-size: 1.5rem;
+  }
+}
+</style>
