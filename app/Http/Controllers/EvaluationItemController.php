@@ -56,50 +56,46 @@ class EvaluationItemController extends Controller
     {
         try {
             $request->validate([
-                'file' => 'required|mimes:csv,txt',
+                'csv_file' => 'required|mimes:csv,txt',
                 'year' => 'required|exists:years,id'
             ]);
 
             DB::beginTransaction();
 
-            $file = $request->file('file');
+            $file = $request->file('csv_file');
             $content = file_get_contents($file->getPathname());
-            $rows = explode("\n", trim($content));
+            $content = preg_replace('/\x{EF}\x{BB}\x{BF}/', '', $content);
+            $lines = explode("\n", trim($content));
 
-            // Clean and parse header
-            $headers = str_getcsv(array_shift($rows));
-            $headers = array_map(function ($header) {
-                return trim($header, " \t\n\r\0\x0B\"");
-            }, $headers);
+            $csvData = array_map(function ($line) {
+                return str_getcsv(trim($line));
+            }, $lines);
 
-            // Process rows
+            $headers = array_map('trim', array_shift($csvData));
+            $expectedHeaders = ['title', 'type', 'sequence', 'category'];
+
+            if (array_diff($expectedHeaders, $headers)) {
+                throw new \Exception('Invalid CSV format. Required columns: ' . implode(', ', $expectedHeaders));
+            }
+
             $categorizedItems = [];
-            foreach ($rows as $row) {
-                if (empty(trim($row))) continue;
+            foreach ($csvData as $row) {
+                if (empty($row) || count($row) !== count($headers)) continue;
 
-                $values = str_getcsv($row);
-
-                // Validate row has same number of columns as header
-                if (count($values) !== count($headers)) {
-                    Log::warning('Skipping invalid row: ' . $row);
-                    continue;
-                }
-
-                $data = array_combine($headers, $values);
-                $categoryName = trim($data['category'], '"');
+                $data = array_combine($headers, array_map('trim', $row));
+                $categoryName = $data['category'];
 
                 if (!isset($categorizedItems[$categoryName])) {
                     $categorizedItems[$categoryName] = [];
                 }
 
                 $categorizedItems[$categoryName][] = [
-                    'title' => trim($data['title'], '"'),
-                    'type' => trim($data['type'], '"'),
-                    'sequence' => (int)trim($data['sequence'], '"')
+                    'title' => $data['title'],
+                    'type' => $data['type'],
+                    'sequence' => (int)$data['sequence']
                 ];
             }
 
-            // Create categories and items
             foreach ($categorizedItems as $categoryName => $items) {
                 $category = Category::firstOrCreate([
                     'name' => $categoryName,
@@ -112,11 +108,26 @@ class EvaluationItemController extends Controller
             }
 
             DB::commit();
-            return redirect()->back()->with('success', 'CSV imported successfully');
+            return redirect()->back();
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('CSV Import Error: ' . $e->getMessage());
-            return redirect()->back()->withErrors(['error' => 'Failed to import CSV: ' . $e->getMessage()]);
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    public function clearYear($yearId)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Delete all categories for year (will cascade to evaluation items)
+            Category::where('year_id', $yearId)->delete();
+
+            DB::commit();
+            return redirect()->back();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 

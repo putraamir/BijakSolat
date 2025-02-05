@@ -38,7 +38,7 @@ Route::get('/dashboard', function () {
     $teacherClasses = Auth::user()->classes()
         ->with('students') // Now this relationship will work
         ->get()
-        ->map(function($class) {
+        ->map(function ($class) {
             return [
                 'id' => $class->id,
                 'name' => $class->name,
@@ -183,11 +183,11 @@ Route::delete('/api/classes/{id}', [ClassController::class, 'destroy'])
     ->middleware(['auth'])
     ->name('classes.destroy');
 
-    Route::post('/api/evaluation-objects/import', [EvaluationItemController::class, 'import'])
+Route::post('/api/evaluation-objects/import', [EvaluationItemController::class, 'import'])
     ->middleware(['auth'])
     ->name('evaluation-objects.import');
 
-Route::post('logout', function () {
+Route::get('/logout', function () {
     Auth::logout();
     return redirect('/');
 })->name('logout');
@@ -198,11 +198,11 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/password', [ProfileController::class, 'updatePassword'])->name('password.update');
     Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
     Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])
-    ->name('profile.avatar.update')
-    ->middleware(['auth', 'verified']);
+        ->name('profile.avatar.update')
+        ->middleware(['auth', 'verified']);
     Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])
-    ->name('profile.avatar.update')
-    ->middleware('auth');
+        ->name('profile.avatar.update')
+        ->middleware('auth');
 });
 
 
@@ -238,18 +238,22 @@ Route::post('/evaluation/import', [EvaluationItemController::class, 'importCsv']
     ->name('evaluation.import')
     ->middleware(['auth']);
 
-    Route::get('/test-cloudinary', function() {
-        try {
-            $cloudinary = new \App\Services\CloudinaryService();
-            dd([
-                'cloud_name' => config('services.cloudinary.cloud_name'),
-                'api_key_exists' => !empty(config('services.cloudinary.api_key')),
-                'api_secret_exists' => !empty(config('services.cloudinary.api_secret')),
-                'cloudinary_initialized' => $cloudinary !== null
-            ]);
-        } catch (\Exception $e) {
-            dd($e->getMessage());
-        }
-    });
+Route::get('/test-cloudinary', function () {
+    try {
+        $cloudinary = new \App\Services\CloudinaryService();
+        dd([
+            'cloud_name' => config('services.cloudinary.cloud_name'),
+            'api_key_exists' => !empty(config('services.cloudinary.api_key')),
+            'api_secret_exists' => !empty(config('services.cloudinary.api_secret')),
+            'cloudinary_initialized' => $cloudinary !== null
+        ]);
+    } catch (\Exception $e) {
+        dd($e->getMessage());
+    }
+});
+
+Route::delete('/evaluation/clear/{year}', [EvaluationItemController::class, 'clearYear'])
+    ->name('evaluation.clear')
+    ->middleware(['auth']);
 
 require __DIR__ . '/auth.php';
