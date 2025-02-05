@@ -15,7 +15,15 @@ use App\Models\EvaluationItem;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\Year;
+use App\Http\Controllers\EvaluationItemController;
+use App\Http\Controllers\StatsController;
+use App\Http\Controllers\StudentEvaluationController;
+use App\Models\Category;
+use App\Models\StudentEvaluation;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -27,9 +35,22 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+    $teacherClasses = Auth::user()->classes()
+        ->with('students') // Now this relationship will work
+        ->get()
+        ->map(function ($class) {
+            return [
+                'id' => $class->id,
+                'name' => $class->name,
+                'year_id' => $class->year_id,
+                'students_count' => $class->students->count()
+            ];
+        });
 
+    return Inertia::render('Dashboard', [
+        'teacherClasses' => $teacherClasses
+    ]);
+})->middleware(['auth', 'verified'])->name('dashboard');
 Route::middleware('auth')->group(function () {
     Route::get('/login-page', function () {
         return Inertia::render('Login', [
@@ -82,17 +103,29 @@ Route::get('/kemaskini/tahun/{year}/class/{classId}', function ($year, $classId)
 })->name('class.students');
 
 Route::get('/kemaskini/tahun/{year}/student/{studentId}/semak', function ($year, $studentId) {
-    // Fetch student data from your database
-    $student = [
-        'id' => $studentId,
-        'name' => 'Student Name',
-        // Add other student details
-    ];
+    try {
+        $student = Student::with('class.year')->findOrFail($studentId);
 
-    return Inertia::render('SemakPage', [
-        'student' => $student,
-        'year' => (int)$year
-    ]);
+        $categories = Category::with(['evaluationItems' => function ($query) {
+            $query->orderBy('sequence');
+        }])->where('year_id', $year)->get();
+
+        $existingEvaluations = StudentEvaluation::where('student_id', $studentId)
+            ->get()
+            ->keyBy('evaluation_item_id')
+            ->map(function ($evaluation) {
+                return $evaluation->status;
+            });
+
+        return Inertia::render('SemakPage', [
+            'student' => $student,
+            'categories' => $categories,
+            'existingEvaluations' => $existingEvaluations
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error loading semak page: ' . $e->getMessage());
+        return redirect()->back()->withErrors(['error' => 'Failed to load data']);
+    }
 })->name('student.semak');
 
 Route::post('/submit-evaluation', function () {
@@ -110,14 +143,15 @@ Route::get('/kemaskini/tahun/{year}/add-student', function ($year) {
 Route::middleware(['auth'])->group(function () {
     Route::get('/guru', function () {
         return Inertia::render('Guru', [
-            'teachers' => Teacher::with('classes')->get(),
+            'teachers' => User::with('classes')->get(),
             'availableClasses' => ClassRoom::where(function ($query) {
-                $query->whereDoesntHave('teachers')
-                    ->orWhereHas('teachers', function ($q) {
-                        $q->where('teachers.id', request()->input('editing_teacher_id'));
+                $query->whereDoesntHave('users', function ($q) {
+                    $q->where('users.id', '!=', request()->input('editing_teacher_id'));
+                })
+                    ->orWhereHas('users', function ($q) {
+                        $q->where('users.id', request()->input('editing_teacher_id'));
                     });
-            })->get(),
-            'unassignedClasses' => ClassRoom::whereDoesntHave('teachers')->get()
+            })->get()
         ]);
     })->name('guru');
 });
@@ -126,8 +160,10 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['auth'])->group(function () {
         Route::get('/statistik', function () {
             return Inertia::render('Statistik', [
-                'years' => Year::orderBy('id')->get(),
-                'classes' => ClassRoom::with('year')->get()
+                'years' => Year::orderBy('name')->get(),
+                'classes' => ClassRoom::with('year')
+                    ->orderBy('name')
+                    ->get()
             ]);
         })->name('statistik');
     });
@@ -143,63 +179,85 @@ Route::delete('/students/{student}', [StudentController::class, 'destroy'])->nam
 Route::post('/teachers', [TeacherController::class, 'store'])->name('teachers.store');
 Route::put('/teachers/{teacher}', [TeacherController::class, 'update'])->name('teachers.update');
 Route::delete('/teachers/{teacher}', [TeacherController::class, 'destroy'])->name('teachers.destroy');
+Route::delete('/api/classes/{id}', [ClassController::class, 'destroy'])
+    ->middleware(['auth'])
+    ->name('classes.destroy');
+
+Route::post('/api/evaluation-objects/import', [EvaluationItemController::class, 'import'])
+    ->middleware(['auth'])
+    ->name('evaluation-objects.import');
+
+Route::get('/logout', function () {
+    Auth::logout();
+    return redirect('/');
+})->name('logout');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/tetapan', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/password', [ProfileController::class, 'updatePassword'])->name('password.update');
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])
+        ->name('profile.avatar.update')
+        ->middleware(['auth', 'verified']);
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])
+        ->name('profile.avatar.update')
+        ->middleware('auth');
+});
 
 
-Route::get('/stats/{year}/{class}', function ($year, $class) {
-    // Base query for students in the selected year
-    $query = Student::where('year_id', $year);
+Route::middleware('auth')->group(function () {
+    Route::get('/objek-penilaian', function (Request $request) {
+        return Inertia::render('EvaluationObject', [
+            'years' => Year::orderBy('id')->get(),
+            'evaluationData' => Category::with('evaluationItems')
+                ->where('year_id', $request->input('year', 1))
+                ->get(),
+            'existingCategories' => Category::where('year_id', $request->input('year', 1))
+                ->select('id', 'name')
+                ->get()
+        ]);
+    })->name('evaluation.index');
+    Route::post('/objek-penilaian/import', [EvaluationItemController::class, 'import'])->name('evaluation.import');
+    Route::post('/evaluation/store', [StudentEvaluationController::class, 'store'])->name('evaluation.store');
+    Route::delete('/objek-penilaian/{id}', [EvaluationItemController::class, 'destroy'])->name('evaluation.destroy');
+    Route::get('/stats/fetch', [StatsController::class, 'fetch'])
+        ->name('stats.fetch');
+});
 
-    // If a specific class is selected (not 'all'), filter by class
-    if ($class !== 'all') {
-        $query->where('class_name', $class);
+Route::post('/evaluation', [EvaluationItemController::class, 'store'])->name('evaluation.store');
+Route::delete('/evaluation-items/{item}', [EvaluationItemController::class, 'destroy'])->name('evaluation.destroy');
+Route::delete('/class/{classId}/clear', [StudentController::class, 'clearClass'])->name('class.clear');
+
+Route::put('/users/{user}/classes', function (User $user, Request $request) {
+    $user->classes()->sync($request->classes);
+    return redirect()->back();
+})->name('users.update.classes');
+
+Route::post('/evaluation/import', [EvaluationItemController::class, 'importCsv'])
+    ->name('evaluation.import')
+    ->middleware(['auth']);
+
+Route::get('/test-cloudinary', function () {
+    try {
+        $cloudinary = new \App\Services\CloudinaryService();
+        dd([
+            'cloud_name' => config('services.cloudinary.cloud_name'),
+            'api_key_exists' => !empty(config('services.cloudinary.api_key')),
+            'api_secret_exists' => !empty(config('services.cloudinary.api_secret')),
+            'cloudinary_initialized' => $cloudinary !== null
+        ]);
+    } catch (\Exception $e) {
+        dd($e->getMessage());
     }
+});
 
-    // Get all relevant students
-    $students = $query->get();
+Route::delete('/evaluation/clear/{year}', [EvaluationItemController::class, 'clearYear'])
+    ->name('evaluation.clear')
+    ->middleware(['auth']);
 
-    // Initialize categories (assuming you have these categories)
-    $categories = [
-        'Akademik' => [
-            'passed' => 0,
-            'not_passed' => 0
-        ],
-        'Kokurikulum' => [
-            'passed' => 0,
-            'not_passed' => 0
-        ],
-        'Sahsiah' => [
-            'passed' => 0,
-            'not_passed' => 0
-        ]
-    ];
-
-    // Count students for each category
-    foreach ($students as $student) {
-        foreach ($categories as $category => &$stats) {
-            // Example logic - adjust according to your actual data structure
-            $isPassed = $student->{"is_{$category}_passed"} ?? false;
-            if ($isPassed) {
-                $stats['passed']++;
-            } else {
-                $stats['not_passed']++;
-            }
-        }
-    }
-
-    // Format response data
-    $responseData = [];
-    foreach ($categories as $category => $stats) {
-        $responseData[] = [
-            'category' => $category,
-            'passed' => $stats['passed'],
-            'not_passed' => $stats['not_passed']
-        ];
-    }
-
-    return response()->json([
-        'total' => $students->count(),
-        'data' => $responseData
-    ]);
-})->name('stats.fetch');
+Route::get('/offline', function () {
+    return view('offline');
+});
 
 require __DIR__ . '/auth.php';

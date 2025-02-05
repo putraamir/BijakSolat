@@ -12,8 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->string('title');
-            $table->enum('type', ['RUKUN', 'SUNAT']);
-            $table->integer('year');
+            $table->enum('type', ['RUKUN', 'SUNAT', 'WAJIB']);
             $table->integer('sequence');
             $table->timestamps();
         });

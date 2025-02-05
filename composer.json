@@ -7,10 +7,14 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "cloudinary/cloudinary_php": "^3.1",
+        "doctrine/dbal": "^4.2",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^11.31",
         "laravel/sanctum": "^4.0",
+        "laravel/socialite": "^5.16",
         "laravel/tinker": "^2.9",
+        "maatwebsite/excel": "^1.1",
         "tightenco/ziggy": "^2.0"
     },
     "require-dev": {
@@ -26,6 +30,7 @@
     "autoload": {
         "psr-4": {
             "App\\": "app/",
+            "App\\Imports\\": "app/Imports/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         }

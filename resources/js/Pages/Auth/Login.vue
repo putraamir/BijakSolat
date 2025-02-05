@@ -47,7 +47,7 @@ const submit = () => {
                 <form @submit.prevent="submit">
                     <!-- Email Field -->
                     <div>
-                        <InputLabel for="email" value="Email" />
+                        <InputLabel for="email" value="Email" class="form-label" />
 
                         <TextInput
                             id="email"
@@ -64,7 +64,7 @@ const submit = () => {
 
                     <!-- Password Field -->
                     <div class="mt-4">
-                        <InputLabel for="password" value="Kata Laluan" />
+                        <InputLabel for="password" value="Kata Laluan" class="form-label" />
 
                         <TextInput
                             id="password"
@@ -76,6 +76,22 @@ const submit = () => {
                         />
 
                         <InputError class="mt-2" :message="form.errors.password" />
+                    </div>
+
+                    <!-- Error Messages -->
+                    <div v-if="form.errors.email || form.errors.password" class="mt-4">
+                        <p class="text-red-500 text-sm" v-if="form.errors.email">
+                            {{ form.errors.email }}
+                        </p>
+                        <p class="text-red-500 text-sm" v-if="form.errors.password">
+                            {{ form.errors.password }}
+                        </p>
+                    </div>
+
+                    <div v-if="form.errors.general" class="mt-4">
+                        <p class="text-red-500 text-sm">
+                            {{ form.errors.general }}
+                        </p>
                     </div>
 
                     <!-- Remember Me Checkbox -->
@@ -98,13 +114,12 @@ const submit = () => {
                             Lupa kata laluan?
                         </Link>
 
-                        <PrimaryButton
-                            :class="{ 'opacity-25': form.processing }"
-                            :disabled="form.processing"
-                            class="ms-4 bg-mint-600 hover:bg-mint-700"
+                        <button
+                            type="submit"
+                            class="w-full py-2 px-1 bg-mint-700 hover:bg-mint-800 text-white font-semibold rounded-lg shadow-sm"
                         >
                             Log Masuk
-                        </PrimaryButton>
+                        </button>
                     </div>
 
                     <!-- Register Link -->
@@ -120,3 +135,10 @@ const submit = () => {
             </div>
         </div>
 </template>
+
+<!-- Add style section -->
+<style>
+.form-label {
+    @apply text-emerald-700 font-medium;
+}
+</style>

@@ -31,8 +31,9 @@ const closeModal = () => {
 </script>
 
 <template>
- <div class="bg-mint-50 min-h-screen p-6 relative">
-    <div class="max-w-4xl mx-auto">
+ <div class="flex-1 bg-white-100">
+    <div class="flex-1 bg-white-100">
+        <div class="p-4 md:p-6 space-y-4 md:space-y-6">
       <h1 class="text-3xl font-bold text-gray-800 mb-8">Kemaskini</h1>
 
       <div class="grid gap-4">
@@ -109,4 +110,5 @@ const closeModal = () => {
     </div>
   </div>
  </div>
+</div>
 </template>

@@ -7,8 +7,8 @@
         :user-role="$page.props.auth.user?.role"
         :user-avatar="$page.props.auth.user?.avatar"
       >
-        <slot></slot>
-      </Sidebar>
+      <slot></slot>
+    </Sidebar>
       <Register />
       <Login />
 
